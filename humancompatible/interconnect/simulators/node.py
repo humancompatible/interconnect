@@ -14,6 +14,11 @@ class NodeMeta(type):
         return instance
 
 class Node(metaclass=NodeMeta):
+    """
+    Base class for all nodes in the network, not to be used directly.
+
+    :param name: Name of the node, used for debugging and visualization
+    """
     def __init__(self,name):
         self.name = name
         self.inputs = []
