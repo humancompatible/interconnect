@@ -7,6 +7,13 @@ class Population(Node):
         self.agents = []
 
     def add_agent(self, agent):
+        """
+        Add an agent to the population
+
+        :param agent: Agent object
+
+        :return: None
+        """
         self.agents.append(agent)
 
     def step(self,signal):
