@@ -9,13 +9,7 @@ class Aggregator(Node):
         super().__init__(name=name)
 
     def step(self, signal):
-        symbols = {f'x{i}': sympy.Symbol(f'x{i}') for i in range(1, len(signal) + 1)}
-        variable_values = {symbols[f'x{i}']: value for i, value in enumerate(signal, start=1)}
-        total_signal_expr = self.logic.aggregation_function(*symbols.values()).subs(self.logic.constants)
-        total_signal_func = sympy.lambdify(symbols.values(), total_signal_expr)
-        total_signal = total_signal_func(*variable_values.values())
-
-        self.outputValue = [total_signal]
+        self.outputValue = [self.logic.aggregation_function(signal)]
         self.history.append(self.outputValue)
         return self.outputValue
 

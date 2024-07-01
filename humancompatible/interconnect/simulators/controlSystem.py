@@ -4,6 +4,7 @@ from collections import deque
 import io
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import time 
 
 class ControlSystem:
     def __init__(self):
@@ -14,6 +15,7 @@ class ControlSystem:
         self.startNode = None
         self.checkpointNode = None
         self.iteration_count = 0
+        self.run_times = {}
     
     def add_node(self, node):
         """
@@ -98,15 +100,15 @@ class ControlSystem:
         """
         errors = []
 
-        node_names = set()
+        node_names = []
         for node in self.nodes:
             # Check for duplicate node names
             if node.name in node_names:
                 errors.append(f"Duplicate node name: {node.name}")
-            node_names.add(node.name)
+            node_names.append(node.name)
 
             # Check for valid node types
-            if node.type not in ["Controller", "Filterer", "Population", "Aggregator"]:
+            if node.type not in ["Controller", "Filterer", "Population", "Aggregator", "ReferenceSignal", "Delay"]:
                 errors.append(f"Invalid node type for node {node.name}: {node.type}")
 
             # Check for many-to-one connections for non-Aggregator nodes
@@ -125,32 +127,6 @@ class ControlSystem:
         if self.checkpointNode is None:
             errors.append("No checkpoint node has been set.")
 
-        # Check for circular dependencies
-        visited = set()
-        stack = set()
-        def dfs(node):
-            visited.add(node)
-            stack.add(node)
-            for output_node in node.outputs:
-                if output_node not in visited:
-                    if dfs(output_node):
-                        return True
-                elif output_node in stack:
-                    errors.append("Circular dependency detected.")
-                    return True
-            stack.remove(node)
-            return False
-        dfs(self.startNode)
-
-        # Check that all nodes are connected (e.g., there are not disconnected subgraphs)
-        if len(visited) != len(self.nodes):
-            errors.append("Not all nodes are connected in the control system.")
-
-        # Check for unreachable nodes
-        unreachable_nodes = set(self.nodes) - visited
-        if unreachable_nodes:
-            errors.append(f"Unreachable nodes detected: {', '.join([node.name for node in unreachable_nodes])}")
-
         # Check that the flow will loop back to the checkpoint node once it has been reached
         visited = set()
         queue = deque([self.checkpointNode])
@@ -160,14 +136,28 @@ class ControlSystem:
             for output_node in node.outputs:
                 if output_node not in visited:
                     queue.append(output_node)
+
         if self.checkpointNode not in visited:
             errors.append("The flow does not loop back to the checkpoint node.")
 
-        if errors:
-            return errors
+        # Check for unreachable nodes
+        visited = set()
+        queue = deque([self.startNode])
+        while queue:
+            node = queue.popleft()
+            visited.add(node)
+            for output_node in node.outputs:
+                if output_node not in visited:
+                    queue.append(output_node)
+
+        unreachable_nodes = set(self.nodes) - visited
+        if unreachable_nodes:
+            errors.append(f"Unreachable nodes detected: {', '.join([node.name for node in unreachable_nodes])}")
+
+        if len(errors) > 0:
+            raise ValueError("Invalid Control System Configuration:\n" + "\n".join(errors))
         else:
             return True
-
 
     def render_graph(self):
         """
@@ -263,6 +253,8 @@ class ControlSystem:
         """
         system_valid = self.check_system()
         self._resetNodes()
+        for node in self.nodes:
+            self.run_times[node.name] = []
         if system_valid:
             self.iteration_count = 0  # Reset the iteration count before starting
 
@@ -280,7 +272,10 @@ class ControlSystem:
                 # Flatten the list of lists
                 input_signals = [signal for sublist in input_signals for signal in sublist]
 
+                start_time = time.time()
                 response = node.step(input_signals)
+                end_time = time.time()
+                self.run_times[node.name].append(end_time-start_time)
                 # node.outputValue = response
 
                 if showTrace:
@@ -298,6 +293,27 @@ class ControlSystem:
         else:
             for e in system_valid:
                 raise ValueError(e)
+
+    def plotRuntimes(self):
+        """
+        Plot the average runtimes of each node in the control system using a log scale.
+
+        :return: None
+        """
+        # Calculate the average runtimes for each node
+        avg_runtimes = {node: sum(times)/len(times) for node, times in self.run_times.items()}
+
+        # Create a bar chart with a log scale on the y-axis
+        plt.figure()
+        plt.bar(avg_runtimes.keys(), avg_runtimes.values())
+        plt.yscale('log')
+        plt.xlabel("Node")
+        plt.ylabel("Average Runtime (s)")
+        plt.title("Average Runtime of Each Node in the Control System (Log Scale)")
+        plt.xticks(rotation=45, ha='right')
+        plt.tight_layout()
+        plt.show()
+
 
     def _resetNodes(self):
         """

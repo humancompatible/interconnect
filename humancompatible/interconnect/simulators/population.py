@@ -1,10 +1,12 @@
+from concurrent.futures import ThreadPoolExecutor
 from humancompatible.interconnect.simulators.node import Node
 
 class Population(Node):
-    def __init__(self,name):
+    def __init__(self, name, max_workers=None):
         self.type = "Population"
         super().__init__(name=name)
         self.agents = []
+        self.max_workers = max_workers
 
     def add_agent(self, agent):
         """
@@ -26,11 +28,10 @@ class Population(Node):
         """
         self.agents.extend(agents)
 
-    def step(self,signal):
-        if len(signal)>0:
-            responses = []
-            for agent in self.agents:
-                responses.append(agent.step(signal))
+    def step(self, signal):
+        if len(signal) > 0:
+            with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+                responses = list(executor.map(lambda agent: agent.step(signal), self.agents))
             self.outputValue = responses
         self.history.append(self.outputValue)
-        return self.outputValue 
+        return self.outputValue
