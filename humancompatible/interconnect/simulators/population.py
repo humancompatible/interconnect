@@ -15,6 +15,16 @@ class Population(Node):
         :return: None
         """
         self.agents.append(agent)
+    
+    def add_agents(self, agents):
+        """
+        Add multiple agents to the population
+
+        :param agents: List of Agent objects
+
+        :return: None
+        """
+        self.agents.extend(agents)
 
     def step(self,signal):
         if len(signal)>0:
@@ -22,4 +32,5 @@ class Population(Node):
             for agent in self.agents:
                 responses.append(agent.step(signal))
             self.outputValue = responses
+        self.history.append(self.outputValue)
         return self.outputValue 

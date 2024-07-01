@@ -262,6 +262,7 @@ class ControlSystem:
         :return: None
         """
         system_valid = self.check_system()
+        self._resetNodes()
         if system_valid:
             self.iteration_count = 0  # Reset the iteration count before starting
 
@@ -297,3 +298,24 @@ class ControlSystem:
         else:
             for e in system_valid:
                 raise ValueError(e)
+
+    def _resetNodes(self):
+        """
+        Reset the output values and history of all nodes in the control system.
+
+        :return: None
+        """
+        for node in self.nodes:
+            node.outputValue = []
+            node.history = []
+
+    def plotNodeOutputHistory(self, node):
+        """
+        Plot the history of a node's output values over time.
+
+        :param node: The node for which to plot the history of output values.
+        :type node: Node object (e.g. Controller, Filterer, Population), required
+
+        :return: None
+        """
+        self.nodes[self.nodes.index(node)].plotOutputHistory()
