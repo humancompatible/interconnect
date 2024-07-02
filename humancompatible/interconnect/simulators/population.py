@@ -1,7 +1,8 @@
-from concurrent.futures import ThreadPoolExecutor
+# from concurrent.futures import ThreadPoolExecutor
 from humancompatible.interconnect.simulators.node import Node
 import random
 import matplotlib.pyplot as plt
+import numpy as np
 
 class Population(Node):
     def __init__(self, name, logic, number_of_agents, positive_response, negative_response):
@@ -12,7 +13,7 @@ class Population(Node):
         self.positive_response = positive_response
         self.negative_response = negative_response
 
-    def step(self,signal):
+    def step(self, signal):
         if len(signal) != len(self.logic.variables):
             raise ValueError("Number of signal inputs does not match the number of variables.")
         
@@ -22,14 +23,13 @@ class Population(Node):
         substituted_expr = self.logic.expression.subs(variable_values).subs(self.logic.constants)
         # Evaluate the substituted expression
         probability = float(substituted_expr)
-            
-        responses = []
-        for i in range(self.number_of_agents):
-            if random.random() < probability:
-                responses.append(self.positive_response)
-            else:
-                responses.append(self.negative_response)
-        self.outputValue = responses
+        
+        # Generate a vector of random numbers between 0 and 1
+        random_numbers = np.random.rand(self.number_of_agents)
+        # Compare the random numbers with the probability threshold
+        responses = np.where(random_numbers < probability, self.positive_response, self.negative_response)
+        
+        self.outputValue = responses.tolist()
         self.history.append(self.outputValue)
         return self.outputValue
 

@@ -5,6 +5,7 @@ import io
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import time 
+from tqdm import tqdm
 
 class ControlSystem:
     def __init__(self):
@@ -261,38 +262,41 @@ class ControlSystem:
             queue = deque([self.startNode])
             visited = set()
 
-            while self.iteration_count < iterations+1:
-                node = queue.popleft()
-                visited.add(node)
+            with tqdm(total=iterations, desc="Running Control System") as pbar:
+                while self.iteration_count < iterations+1:
+                    node = queue.popleft()
+                    visited.add(node)
 
-                if showTrace:
-                    print(f"NODE: {node.name}\n   INPUT: {[input_node.outputValue for input_node in node.inputs]}")
-
-                input_signals = [input_node.outputValue for input_node in node.inputs]
-                # Flatten the list of lists
-                input_signals = [signal for sublist in input_signals for signal in sublist]
-
-                start_time = time.time()
-                response = node.step(input_signals)
-                end_time = time.time()
-                self.run_times[node.name].append(end_time-start_time)
-                # node.outputValue = response
-
-                if showTrace:
-                    print(f"   OUTPUT: {response}")
-
-                if node == self.checkpointNode:
-                    self.iteration_count += 1
                     if showTrace:
-                        print(f"Checkpoint: Iteration {self.iteration_count-1}")
-                    visited.clear()  # Clear the visited set for the next iteration
+                        print(f"NODE: {node.name}\n   INPUT: {[input_node.outputValue for input_node in node.inputs]}")
 
-                for output_node in node.outputs:
-                    if output_node not in visited:
-                        queue.append(output_node)
+                    input_signals = [input_node.outputValue for input_node in node.inputs]
+                    # Flatten the list of lists
+                    input_signals = [signal for sublist in input_signals for signal in sublist]
+
+                    start_time = time.time()
+                    response = node.step(input_signals)
+                    end_time = time.time()
+                    self.run_times[node.name].append(end_time-start_time)
+                    # node.outputValue = response
+
+                    if showTrace:
+                        print(f"   OUTPUT: {response}")
+
+                    if node == self.checkpointNode:
+                        self.iteration_count += 1
+                        if showTrace:
+                            print(f"Checkpoint: Iteration {self.iteration_count-1}")
+                        visited.clear()  # Clear the visited set for the next iteration
+                        pbar.update(1)  # Update the progress bar
+
+                    for output_node in node.outputs:
+                        if output_node not in visited:
+                            queue.append(output_node)
         else:
             for e in system_valid:
                 raise ValueError(e)
+
 
     def plotRuntimes(self):
         """
