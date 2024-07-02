@@ -101,25 +101,6 @@ class ControlSystem:
         """
         errors = []
 
-        node_names = []
-        for node in self.nodes:
-            # Check for duplicate node names
-            if node.name in node_names:
-                errors.append(f"Duplicate node name: {node.name}")
-            node_names.append(node.name)
-
-            # Check for valid node types
-            if node.type not in ["Controller", "Filterer", "Population", "Aggregator", "ReferenceSignal", "Delay"]:
-                errors.append(f"Invalid node type for node {node.name}: {node.type}")
-
-            # Check for many-to-one connections for non-Aggregator nodes
-            if len(node.inputs) > 1 and node.type != "Aggregator":
-                errors.append(f"Node {node.name} has multiple input connections but is not an Aggregator.")
-            
-            # Check for nodes with no connections
-            if len(node.inputs) == 0 and len(node.outputs) == 0:
-                errors.append(f"Node {node.name} is not connected to any other node.")
-
         # Check that there is a start node
         if self.startNode is None:
             errors.append("No start node has been set.")
@@ -128,32 +109,60 @@ class ControlSystem:
         if self.checkpointNode is None:
             errors.append("No checkpoint node has been set.")
 
-        # Check that the flow will loop back to the checkpoint node once it has been reached
-        visited = set()
-        queue = deque([self.checkpointNode])
-        while queue:
-            node = queue.popleft()
-            visited.add(node)
-            for output_node in node.outputs:
-                if output_node not in visited:
-                    queue.append(output_node)
+        if len(errors) == 0:
 
-        if self.checkpointNode not in visited:
-            errors.append("The flow does not loop back to the checkpoint node.")
+            node_names = []
+            for node in self.nodes:
+                # Check for duplicate node names
+                if node.name in node_names:
+                    errors.append(f"Duplicate node name: {node.name}")
+                node_names.append(node.name)
 
-        # Check for unreachable nodes
-        visited = set()
-        queue = deque([self.startNode])
-        while queue:
-            node = queue.popleft()
-            visited.add(node)
-            for output_node in node.outputs:
-                if output_node not in visited:
-                    queue.append(output_node)
+                # Check for valid node types
+                if node.type not in ["Controller", "Filterer", "Population", "Aggregator", "ReferenceSignal", "Delay"]:
+                    errors.append(f"Invalid node type for node {node.name}: {node.type}")
 
-        unreachable_nodes = set(self.nodes) - visited
-        if unreachable_nodes:
-            errors.append(f"Unreachable nodes detected: {', '.join([node.name for node in unreachable_nodes])}")
+                # Check for many-to-one connections for non-Aggregator nodes
+                if len(node.inputs) > 1 and node.type != "Aggregator":
+                    errors.append(f"Node {node.name} has multiple input connections but is not an Aggregator.")
+                
+                # Check for nodes with no connections
+                if len(node.inputs) == 0 and len(node.outputs) == 0:
+                    errors.append(f"Node {node.name} is not connected to any other node.")
+
+            # Check that the checkpoint node is part of a loop
+            visited = set()
+            queue = deque([self.checkpointNode])
+            checkpoint_in_loop = False
+
+            while queue:
+                node = queue.popleft()
+                visited.add(node)
+                for output_node in node.outputs:
+                    if output_node == self.checkpointNode:
+                        checkpoint_in_loop = True
+                        break
+                    if output_node not in visited:
+                        queue.append(output_node)
+                if checkpoint_in_loop:
+                    break
+
+            if not checkpoint_in_loop:
+                errors.append("The checkpoint node is not part of a loop.")
+
+            # Check for unreachable nodes
+            visited = set()
+            queue = deque([self.startNode])
+            while queue:
+                node = queue.popleft()
+                visited.add(node)
+                for output_node in node.outputs:
+                    if output_node not in visited:
+                        queue.append(output_node)
+
+            unreachable_nodes = set(self.nodes) - visited
+            if unreachable_nodes:
+                errors.append(f"Unreachable nodes detected: {', '.join([node.name for node in unreachable_nodes])}")
 
         if len(errors) > 0:
             raise ValueError("Invalid Control System Configuration:\n" + "\n".join(errors))
