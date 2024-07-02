@@ -6,9 +6,12 @@ class ReferenceSignal(Node):
         pass
 
     def set_reference_signal(self,signal):
-        self.outputValue = [signal]
+        self.ReferenceSignal = signal
 
     def step(self,signal):
         if len(signal)>0:
             self.outputValue = [signal]
+        else:
+            self.outputValue = [self.ReferenceSignal]
+        self.history.append(self.outputValue)
         return self.outputValue

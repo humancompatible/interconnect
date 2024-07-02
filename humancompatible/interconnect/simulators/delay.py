@@ -8,4 +8,5 @@ class Delay(Node):
     def step(self,signal):
         if len(signal)>0:
             self.outputValue = signal
+        self.history.append(self.outputValue)
         return self.outputValue
