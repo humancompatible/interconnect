@@ -1,30 +1,33 @@
-from humancompatible.interconnect.simulators.controllers.base_controller import Controller
+from humancompatible.interconnect.simulators.controller import Controller
 import sympy
 
 
 class PIController(Controller):
-    """
-    This an example PIController
-    Needed parameters are received in constructor and then the symbolic expression is defined.
-    """
-    def __init__(self, name, kp, ki, sp):
-        self.kp = kp
-        self.ki = ki
+
+    def __init__(self, name, logic, sp):
+        super().__init__(name=name, logic=logic)
         self.sp = sp
-        self.integral = 0
-        self.dt = 0
-        self.KP, self.KI, self.ERR, self.INT = sympy.symbols('KP, KI, ERR, INT')
-        self.expr = self.KP * self.ERR + self.KI * self.INT
-        # self.expr = self.KP * self.ERR
-        super().__init__(name=name)
-        pass
 
     def step(self, signal):
-        signal = signal[0]
-        self.dt += 1
-        error = self.sp - signal
-        self.integral += error * self.dt
-        self.outputValue = [
-            self.expr.subs({self.KP: self.kp, self.KI: self.ki, self.ERR: error, self.INT: self.integral})]
-        return self.outputValue
+        signal = [self.sp - signal[0]]
+        if len(signal) != len(self.logic.variables):
+            raise ValueError("Number of signal inputs does not match the number of variables.")
 
+        # Create a dictionary to map variables to their corresponding signal values
+        variable_values = dict(zip(self.logic.variables, signal))
+
+        # Substitute the variable values, constants and propagated values into the expression
+        substituted_expr = (self.logic.expression
+                            .subs(variable_values)
+                            .subs(self.logic.constants)
+                            .subs(self.logic.propagated))
+
+        # Propagate to the next step
+        self.logic.propagated["pi_prev"] = substituted_expr
+        self.logic.propagated["e_prev"] = signal[0]
+
+        # Evaluate the substituted expression
+        self.outputValue = [float(substituted_expr)]
+
+        self.history.append(self.outputValue)
+        return self.outputValue
