@@ -207,3 +207,25 @@ def test_unreachable_node():
     
     with pytest.raises(ValueError, match="Unreachable nodes detected: C3"):
         sim.system.check_system()
+
+def test_no_population_node():
+    sim = Simulation()
+    ref = ReferenceSignal(name="r")
+    ref.set_reference_signal(0.5)
+    
+    agg1 = Aggregator(name="A1", logic=AggregatorLogic())
+    cont = Controller(name="C", logic=ControllerLogic())
+    fil = Filterer(name="F", logic=FiltererLogic())
+    
+    sim.system.add_nodes([ref, agg1, cont, fil])
+    
+    sim.system.connect_nodes(ref, agg1)
+    sim.system.connect_nodes(agg1, cont)
+    sim.system.connect_nodes(cont, fil)
+    sim.system.connect_nodes(fil, agg1)
+
+    sim.system.set_start_node(ref)
+    sim.system.set_checkpoint_node(agg1)
+    
+    with pytest.raises(ValueError, match="No Population nodes have been added to the control system."):
+        sim.system.check_system()

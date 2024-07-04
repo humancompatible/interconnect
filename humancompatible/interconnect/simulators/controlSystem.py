@@ -164,6 +164,11 @@ class ControlSystem:
             if unreachable_nodes:
                 errors.append(f"Unreachable nodes detected: {', '.join([node.name for node in unreachable_nodes])}")
 
+        #check there is at least one population node
+        population_nodes = [node for node in self.nodes if node.type == "Population"]
+        if len(population_nodes) == 0:
+            errors.append("No Population nodes have been added to the control system.")
+
         if len(errors) > 0:
             raise ValueError("Invalid Control System Configuration:\n" + "\n".join(errors))
         else:
