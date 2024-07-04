@@ -77,7 +77,7 @@ class Population(Node):
             except:
                 y_vals.append(None)
 
-        plt.figure(figsize=(10, 6))
+        # plt.figure(figsize=(10, 6))
         plt.grid(True, which="both", ls="-", alpha=0.2)
         plt.title("Probability function of Population")
         plt.xlabel("x")
