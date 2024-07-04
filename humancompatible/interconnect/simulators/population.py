@@ -37,7 +37,7 @@ class Population(Node):
         x = self.logic.symbols["x"]
         expr = self.logic.expression.subs(self.logic.constants)
 
-        x_vals = [xMin + (xMax - xMin) * i / 100 for i in range(100)]
+        x_vals = [xMin + (xMax - xMin) * i / 50 for i in range(50)]
         y_vals = [expr.subs(x, xVal) for xVal in x_vals]
 
         plt.grid()
