@@ -35,6 +35,12 @@ class Population(Node):
         return self.outputValue
 
     def plot_probability(self, xMin=None, xMax=None):
+        """
+        Plots the probability function of the population node.
+
+        :param xMin: Minimum x value for the plot range (optional)
+        :param xMax: Maximum x value for the plot range (optional)
+        """
         x = self.logic.symbols["x"]
         expr = self.logic.expression.subs(self.logic.constants)
 
