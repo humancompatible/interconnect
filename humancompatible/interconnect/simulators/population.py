@@ -3,6 +3,7 @@ from humancompatible.interconnect.simulators.node import Node
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import sympy as sp
 
 class Population(Node):
     def __init__(self, name, logic, number_of_agents, positive_response, negative_response):
@@ -33,13 +34,53 @@ class Population(Node):
         self.history.append(self.outputValue)
         return self.outputValue
 
-    def plot_probability_function(self, xMin, xMax):
+    def plot_probability(self, xMin=None, xMax=None):
         x = self.logic.symbols["x"]
         expr = self.logic.expression.subs(self.logic.constants)
 
-        x_vals = [xMin + (xMax - xMin) * i / 50 for i in range(50)]
-        y_vals = [expr.subs(x, xVal) for xVal in x_vals]
+        # Determine plot range if not provided
+        if xMin is None or xMax is None:
+            # Try to find some interesting points in the function
+            critical_points = []
+            for const in self.logic.constants.values():
+                if isinstance(const, (int, float)):
+                    critical_points.append(float(const))
+            
+            # Add some arbitrary points if we don't have enough
+            critical_points.extend([-100, 0, 100])
 
-        plt.grid()
+            if xMin is None:
+                xMin = min(critical_points) - 10
+            if xMax is None:
+                xMax = max(critical_points) + 10
+
+        # Generate x and y values for plotting
+        x_vals = np.linspace(xMin, xMax, 50)
+        y_vals = []
+        for xVal in x_vals:
+            try:
+                yVal = float(expr.subs(x, xVal))
+                if np.isfinite(yVal):
+                    y_vals.append(yVal)
+                else:
+                    y_vals.append(None)
+            except:
+                y_vals.append(None)
+
+        plt.figure(figsize=(10, 6))
+        plt.grid(True, which="both", ls="-", alpha=0.2)
         plt.title("Probability function of Population")
-        plt.plot(x_vals, y_vals)
+        plt.xlabel("x")
+        plt.ylabel("Probability")
+
+        # Plot the function, skipping over None values
+        valid_indices = [i for i, y in enumerate(y_vals) if y is not None]
+        plt.plot([x_vals[i] for i in valid_indices], [y_vals[i] for i in valid_indices])
+
+        # Set y-axis limits
+        y_min = min((y for y in y_vals if y is not None), default=0)
+        y_max = max((y for y in y_vals if y is not None), default=1)
+        y_range = y_max - y_min
+        plt.ylim(y_min - 0.1 * y_range, y_max + 0.1 * y_range)
+
+        plt.show()
