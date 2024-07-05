@@ -14,7 +14,7 @@ class PIController(Controller):
             raise ValueError("Number of signal inputs does not match the number of variables.")
 
         # Create a dictionary to map variables to their corresponding signal values
-        variable_values = dict(zip(self.logic.variables, signal))
+        variable_values = dict(zip(self.logic.variables, error))
 
         # Substitute the variable values, constants and propagated values into the expression
         substituted_expr = (self.logic.expression
@@ -24,7 +24,7 @@ class PIController(Controller):
 
         # Propagate to the next step
         self.logic.propagated["pi_prev"] = substituted_expr
-        self.logic.propagated["e_prev"] = signal[0]
+        self.logic.propagated["e_prev"] = error[0]
 
         # Evaluate the substituted expression
         self.outputValue = [float(substituted_expr)]
