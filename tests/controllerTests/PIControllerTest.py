@@ -1,4 +1,3 @@
-import numpy as np
 import unittest
 from humancompatible.interconnect.simulators.controllers.PIController import PIController
 from humancompatible.interconnect.simulators.controllers import PIControllerLogic

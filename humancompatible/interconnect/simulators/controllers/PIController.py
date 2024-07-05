@@ -1,5 +1,4 @@
 from humancompatible.interconnect.simulators.controller import Controller
-import sympy
 
 
 class PIController(Controller):
@@ -9,8 +8,9 @@ class PIController(Controller):
         self.sp = sp
 
     def step(self, signal):
-        signal = [self.sp - signal[0]]
-        if len(signal) != len(self.logic.variables):
+        # Controller takes error value as an argument
+        error = [self.sp - signal[0]]
+        if len(error) != len(self.logic.variables):
             raise ValueError("Number of signal inputs does not match the number of variables.")
 
         # Create a dictionary to map variables to their corresponding signal values
