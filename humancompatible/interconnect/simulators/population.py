@@ -3,6 +3,7 @@ from humancompatible.interconnect.simulators.node import Node
 import random
 import matplotlib.pyplot as plt
 import numpy as np
+import sympy as sp
 
 class Population(Node):
     def __init__(self, name, logic, number_of_agents, positive_response, negative_response):
@@ -33,48 +34,73 @@ class Population(Node):
         self.history.append(self.outputValue)
         return self.outputValue
 
-    def plot_probability_function(self, xMin, xMax):
+    def plot_probability(self, xMin=None, xMax=None):
+        """
+        Plots the probability function of the population node.
+
+        :param xMin: Minimum x value for the plot range (optional)
+        :param xMax: Maximum x value for the plot range (optional)
+        """
         x = self.logic.symbols["x"]
         expr = self.logic.expression.subs(self.logic.constants)
 
-        x_vals = [xMin + (xMax - xMin) * i / 100 for i in range(100)]
-        y_vals = [expr.subs(x, xVal) for xVal in x_vals]
+        # Determine plot range if not provided
+        if xMin is None or xMax is None:
+            critical_points = []
+            for const in self.logic.constants.values():
+                if isinstance(const, (int, float)):
+                    critical_points.append(float(const))
+            
+            if isinstance(expr, sp.Piecewise):
+                for piece in expr.args:
+                    if isinstance(piece[1], sp.StrictLessThan):
+                        critical_points.append(float(piece[1].args[1]))
+                    elif isinstance(piece[1], sp.StrictGreaterThan):
+                        critical_points.append(float(piece[1].args[1]))
 
-        plt.grid()
+            if not critical_points:
+                critical_points = [-100, 0, 100]
+
+            if xMin is None:
+                xMin = min(critical_points)
+            if xMax is None:
+                xMax = max(critical_points)
+
+            xRange = xMax - xMin
+            xMin -= 0.1 * xRange
+            xMax += 0.1 * xRange
+
+        # Generate x and y values for plotting
+        x_vals = np.linspace(xMin, xMax, 50)
+        y_vals = []
+        for xVal in x_vals:
+            try:
+                yVal = float(expr.subs(x, xVal))
+                if np.isfinite(yVal):
+                    y_vals.append(yVal)
+                else:
+                    y_vals.append(None)
+            except:
+                y_vals.append(None)
+
+        # plt.figure(figsize=(10, 6))
+        plt.grid(True, which="both", ls="-", alpha=0.2)
         plt.title("Probability function of Population")
-        plt.plot(x_vals, y_vals)
+        plt.xlabel("x")
+        plt.ylabel("Probability")
 
+        # Plot the function, skipping over None values
+        valid_indices = [i for i, y in enumerate(y_vals) if y is not None]
+        plt.plot([x_vals[i] for i in valid_indices], [y_vals[i] for i in valid_indices])
 
-    # def __init__(self, name, max_workers=None):
-    #     self.type = "Population"
-    #     super().__init__(name=name)
-    #     self.agents = []
-    #     self.max_workers = max_workers
+        # Set x-axis limits exactly
+        plt.xlim(xMin, xMax)
 
-    # def add_agent(self, agent):
-    #     """
-    #     Add an agent to the population
+        # Set y-axis limits with padding
+        y_min = min((y for y in y_vals if y is not None), default=0)
+        y_max = max((y for y in y_vals if y is not None), default=1)
+        y_range = y_max - y_min
+        y_padding = 0.1 * y_range
+        plt.ylim(y_min - y_padding, y_max + y_padding)
 
-    #     :param agent: Agent object
-
-    #     :return: None
-    #     """
-    #     self.agents.append(agent)
-    
-    # def add_agents(self, agents):
-    #     """
-    #     Add multiple agents to the population
-
-    #     :param agents: List of Agent objects
-
-    #     :return: None
-    #     """
-    #     self.agents.extend(agents)
-
-    # def step(self, signal):
-    #     if len(signal) > 0:
-    #         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
-    #             responses = list(executor.map(lambda agent: agent.step(signal), self.agents))
-    #         self.outputValue = responses
-    #     self.history.append(self.outputValue)
-    #     return self.outputValue
+        plt.show()
