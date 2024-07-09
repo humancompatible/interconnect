@@ -6,12 +6,17 @@ import matplotlib.image as mpimg
 import numpy as np
 import sympy as sp
 
-
 class Plotter:
+    """
+    Utility class for plotting data from a ControlSystem.
+    """
     def __init__(self, system):
         self.system = system
 
     def runtimes(self, system=None):
+        """
+        Plot the average runtime of each node in the control system.
+        """
         if system is None:
             system = self.system
 
@@ -27,6 +32,9 @@ class Plotter:
         plt.show()
 
     def node_outputs(self, node, system=None):
+        """
+        Plot the output values of a specific node in the control system over time.
+        """
         if system is None:
             system = self.system
 
@@ -43,6 +51,9 @@ class Plotter:
 
 
     def population_probabilities(self, system=None, xMin=None, xMax=None):
+        """
+        Plot the probability functions of all Population nodes in the control system.
+        """
         if system is None:
             system = self.system
 
