@@ -174,52 +174,6 @@ class ControlSystem:
         else:
             return True
 
-    def render_graph(self):
-        """
-        Render the control system as a graph.
-
-        This will display the graph in the Jupyter Notebook.
-
-        :return: None
-        """
-        # Create the main graph
-        dot = Digraph()
-        
-        # Add nodes to the graph
-        for node in self.nodes:
-            if node == self.startNode:
-                dot.node(str(node.node_id), node.name, shape='circle', style='filled', fillcolor='lightgreen')
-            elif node == self.checkpointNode:
-                dot.node(str(node.node_id), node.name, shape='circle', style='filled', fillcolor='lightblue')
-            else:
-                dot.node(str(node.node_id), node.name, shape='circle')
-        
-        # Add edges (connections) to the graph
-        for node in self.nodes:
-            for output_node in node.outputs:
-                dot.edge(str(node.node_id), str(output_node.node_id))
-
-        # Render the graph as an image
-        img_bytes = dot.pipe(format='png')
-        img = mpimg.imread(io.BytesIO(img_bytes))
-
-        # Create a figure and display the graph image
-        fig, ax = plt.subplots(figsize=(8, 6))
-        ax.imshow(img, aspect='equal')
-        ax.axis('off')
-
-        # Create the legend
-        legend_elements = [
-            plt.Line2D([0], [0], marker='o', color='w', label='Start Node', markerfacecolor='lightgreen', markersize=10),
-            plt.Line2D([0], [0], marker='o', color='w', label='Checkpoint Node', markerfacecolor='lightblue', markersize=10)
-        ]
-        ax.legend(handles=legend_elements, loc='upper center', bbox_to_anchor=(0.5, 1.1), ncol=2, frameon=False)
-
-        # Adjust the spacing between the graph and the legend
-        plt.tight_layout(pad=1.0)
-
-        # Display the figure in the Jupyter Notebook
-        plt.show()
 
     def set_start_node(self, node):
         """
@@ -311,28 +265,6 @@ class ControlSystem:
             for e in system_valid:
                 raise ValueError(e)
 
-
-    def plotRuntimes(self):
-        """
-        Plot the average runtimes of each node in the control system using a log scale.
-
-        :return: None
-        """
-        # Calculate the average runtimes for each node
-        avg_runtimes = {node: sum(times)/len(times) for node, times in self.run_times.items()}
-
-        # Create a bar chart with a log scale on the y-axis
-        plt.figure()
-        plt.bar(avg_runtimes.keys(), avg_runtimes.values())
-        plt.yscale('log')
-        plt.xlabel("Node")
-        plt.ylabel("Average Runtime (s)")
-        plt.title("Average Runtime of Each Node in the Control System (Log Scale)")
-        plt.xticks(rotation=45, ha='right')
-        plt.tight_layout()
-        plt.show()
-
-
     def _resetNodes(self):
         """
         Reset the output values and history of all nodes in the control system.
@@ -342,14 +274,3 @@ class ControlSystem:
         for node in self.nodes:
             node.outputValue = []
             node.history = []
-
-    def plotNodeOutputHistory(self, node):
-        """
-        Plot the history of a node's output values over time.
-
-        :param node: The node for which to plot the history of output values.
-        :type node: Node object (e.g. Controller, Filterer, Population), required
-
-        :return: None
-        """
-        self.nodes[self.nodes.index(node)].plotOutputHistory()
