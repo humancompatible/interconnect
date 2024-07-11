@@ -90,8 +90,8 @@ class ControlSystem:
         if node1 not in self.nodes or node2 not in self.nodes:
             raise ValueError("Node is not in the list of nodes.")
 
-        node1.add_output(node2)
-        node2.add_input(node1)
+        node1._add_output(node2)
+        node2._add_input(node1)
 
     def check_system(self):
         """
@@ -243,7 +243,7 @@ class ControlSystem:
                     input_signals = [signal for sublist in input_signals for signal in sublist]
 
                     start_time = time.time()
-                    response = node.step(input_signals)
+                    response = node._step(input_signals)
                     end_time = time.time()
                     self.run_times[node.name].append(end_time-start_time)
                     # node.outputValue = response

@@ -1,4 +1,4 @@
-from humancompatible.interconnect.simulators.nodes.node import Node
+from humancompatible.interconnect.simulators.nodes.base_node import Node
 class ReferenceSignal(Node):
     def __init__(self,name):
         super().__init__(name=name)
@@ -8,7 +8,7 @@ class ReferenceSignal(Node):
     def set_reference_signal(self,signal):
         self.ReferenceSignal = signal
 
-    def step(self,signal):
+    def _step(self,signal):
         if len(signal)>0:
             self.outputValue = [signal]
         else:
