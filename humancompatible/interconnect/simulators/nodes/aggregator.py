@@ -1,4 +1,4 @@
-from humancompatible.interconnect.simulators.nodes.node import Node
+from humancompatible.interconnect.simulators.nodes.base_node import Node
 import sympy
 
 class Aggregator(Node):
@@ -8,7 +8,7 @@ class Aggregator(Node):
         self.logic = logic
         super().__init__(name=name)
 
-    def step(self, signal):
+    def _step(self, signal):
         self.outputValue = [self.logic.aggregation_function(signal)]
         self.history.append(self.outputValue)
         return self.outputValue

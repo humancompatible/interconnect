@@ -12,7 +12,7 @@ from humancompatible.interconnect.simulators.nodes.aggregator import Aggregator
 from humancompatible.interconnect.simulators.nodes.reference import ReferenceSignal
 from humancompatible.interconnect.simulators.nodes.delay import Delay
 from humancompatible.interconnect.simulators.nodes.population import Population
-from humancompatible.interconnect.simulators.nodes.node import Node
+from humancompatible.interconnect.simulators.nodes.base_node import Node
 from humancompatible.interconnect.simulators.logic.controllers.pi_controller import PIControllerLogic
 
 
