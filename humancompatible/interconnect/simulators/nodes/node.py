@@ -1,5 +1,3 @@
-import matplotlib.pyplot as plt
-
 class NodeMeta(type):
     _node_count = 0
 
@@ -33,8 +31,3 @@ class Node(metaclass=NodeMeta):
     
     def add_output(self, node):
         self.outputs.append(node)
-
-    def plotOutputHistory(self):
-        plt.plot(self.history)
-        plt.title(f"Output Values For Node {self.name}")
-        plt.show()

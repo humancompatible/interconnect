@@ -1,4 +1,4 @@
-from humancompatible.interconnect.simulators.node import Node
+from humancompatible.interconnect.simulators.nodes.node import Node
 class Delay(Node):
     def __init__(self,name,time):
         self.type = "Delay"

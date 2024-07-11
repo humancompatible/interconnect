@@ -1,4 +1,4 @@
-from humancompatible.interconnect.simulators.node import Node
+from humancompatible.interconnect.simulators.nodes.node import Node
 import sympy
 
 class Aggregator(Node):
