@@ -274,3 +274,11 @@ class ControlSystem:
         for node in self.nodes:
             node.outputValue = []
             node.history = []
+
+    def compute_lipschitz_constant(self):
+        """
+        Compute the Lipschitz constant in the control system.
+
+        :return: Lipschitz constant
+        """
+        raise NotImplementedError
