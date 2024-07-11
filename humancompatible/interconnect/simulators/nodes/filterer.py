@@ -1,12 +1,13 @@
-from humancompatible.interconnect.simulators.node import Node
+from humancompatible.interconnect.simulators.nodes.node import Node
 import sympy
 
-class Controller(Node):
-    def __init__(self, name, logic):
-        self.type = "Controller"
+class Filterer(Node):
+    def __init__(self,name,logic):
+        self.type = "Filterer"
         self._logic_check(logic)
         self.logic = logic
         super().__init__(name=name)
+        pass
 
     def step(self, signal):
 

@@ -1,7 +1,6 @@
 # from concurrent.futures import ThreadPoolExecutor
-from humancompatible.interconnect.simulators.node import Node
+from humancompatible.interconnect.simulators.nodes.node import Node
 import random
-import matplotlib.pyplot as plt
 import numpy as np
 import sympy as sp
 
