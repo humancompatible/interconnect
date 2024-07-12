@@ -4,28 +4,34 @@ import numpy as np
 
 class Utils:
     @staticmethod
-    def compute_lipschitz_constant_from_expression(expr: sp.Basic) -> int:
+    def compute_lipschitz_constant_from_expression(expr: sp.Basic, interval: tuple = None):
         """
         Computes the lipschitz constant in the given expression.
 
         :param expr: The expression to compute the lipschitz constant from.
+        :param interval: The known interval
         :type expr: sp.Basic
+        :type interval: tuple
 
         :return: The lipschitz constant
-        :rtype: int
         """
-        L = 1
+        lipschitz_const = 1
         if expr.is_Number:
-            return 0
+            lipschitz_const = 0
         if expr.is_Add:
-            args = [Utils.compute_lipschitz_constant_from_expression(arg) for arg in expr.args]
-            L = np.max(args)
-            return L
+            args = [Utils.compute_lipschitz_constant_from_expression(arg, interval) for arg in expr.args]
+            lipschitz_const = np.max(args)
         if expr.is_Mul:
             nums = [arg for arg in expr.args if arg.is_Number]
-            L *= np.prod(nums)
-            exprs = [Utils.compute_lipschitz_constant_from_expression(arg) for arg in expr.args if not arg.is_Number]
-            L *= np.prod(exprs)
+            lipschitz_const *= np.prod(nums)
+            sub_expressions = [Utils.compute_lipschitz_constant_from_expression(arg, interval) for arg in expr.args if not arg.is_Number]
+            lipschitz_const *= np.prod(sub_expressions)
         if expr.is_Pow:
-            raise NotImplementedError
-        return L
+            if interval is None:
+                lipschitz_const = sp.oo
+            else:
+                l, r = interval
+                variable = [arg for arg in expr.args if arg.is_symbol][0]
+                df = sp.diff(expr, variable)
+                lipschitz_const = max(df.subs(variable, l), df.subs(variable, r))
+        return abs(lipschitz_const)
