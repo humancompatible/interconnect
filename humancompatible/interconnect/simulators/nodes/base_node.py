@@ -19,12 +19,13 @@ class Node(metaclass=_NodeMeta):
 
     :param name: Name of the node, used for debugging and visualization
     """
-    def __init__(self,name):
+    def __init__(self, name, logic=None):
         self.name = name
         self.inputs = []
         self.outputs = []
         self.outputValue = []
         self.history = []
+        self.logic = logic
     
     def _add_input(self, node):
         self.inputs.append(node)

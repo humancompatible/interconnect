@@ -45,10 +45,10 @@ class Filterer(Node):
         :param logic: An instance of a logic class that defines the filterer's behavior.
         :type logic: object
         """
+        super().__init__(name=name)
         self.type = "Filterer"
         self._logic_check(logic)
         self.logic = logic
-        super().__init__(name=name)
 
     def _step(self, signal):
         """

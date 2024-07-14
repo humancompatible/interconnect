@@ -1,11 +1,8 @@
-from graphviz import Digraph
-from IPython.display import display
 from collections import deque
-import io
-import matplotlib.pyplot as plt
-import matplotlib.image as mpimg
-import time 
+import time
 from tqdm import tqdm
+from humancompatible.interconnect.simulators.utils import Utils
+
 
 class ControlSystem:
     def __init__(self):
@@ -281,4 +278,12 @@ class ControlSystem:
 
         :return: Lipschitz constant
         """
-        raise NotImplementedError
+        lipschitz_const = 1.0
+        for node in self.nodes:
+            logic = node.logic
+            if logic is not None:
+                expr = logic.expression
+                expr = expr.subs(logic.constants)
+                lipschitz_const *= Utils.compute_lipschitz_constant_from_expression(expr)
+
+        return lipschitz_const

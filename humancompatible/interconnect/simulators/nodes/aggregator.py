@@ -3,10 +3,10 @@ import sympy
 
 class Aggregator(Node):
     def __init__(self, name, logic):
+        super().__init__(name=name)
         self.type = "Aggregator"
         self._logic_check(logic)
         self.logic = logic
-        super().__init__(name=name)
 
     def _step(self, signal):
         self.outputValue = [self.logic.aggregation_function(signal)]

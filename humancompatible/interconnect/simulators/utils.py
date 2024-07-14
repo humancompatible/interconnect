@@ -15,9 +15,9 @@ class Utils:
 
         :return: The lipschitz constant
         """
-        lipschitz_const = 1
+        lipschitz_const = 1.0
         if expr.is_Number:
-            lipschitz_const = 0
+            lipschitz_const = 0.0
         if expr.is_Add:
             args = [Utils.compute_lipschitz_constant_from_expression(arg, interval) for arg in expr.args]
             lipschitz_const = np.max(args)

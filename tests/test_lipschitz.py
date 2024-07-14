@@ -43,3 +43,10 @@ def test_6():
     res = Utils.compute_lipschitz_constant_from_expression(expr, (0, 2))
     expected_expr = 4 * sp.log(2)
     assert res == expected_expr
+
+
+def test_7():
+    x = sp.symbols('x')
+    expr = (x + 1) / 2
+    res = Utils.compute_lipschitz_constant_from_expression(expr)
+    assert res == 0.5
