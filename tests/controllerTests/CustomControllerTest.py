@@ -11,7 +11,7 @@ class MyTestCase(unittest.TestCase):
         S, K = sympy.symbols('S K')
         expr = (S + 1) / K
         cont = CustomController(name="CustomC", expr=expr)
-        actual = cont.step([signal, k])
+        actual = cont._step([signal, k])
         self.assertEqual(expected, actual)  # add assertion here
 
 

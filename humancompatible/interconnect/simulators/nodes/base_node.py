@@ -1,6 +1,4 @@
-import matplotlib.pyplot as plt
-
-class NodeMeta(type):
+class _NodeMeta(type):
     _node_count = 0
 
     def __call__(cls, *args, **kwargs):
@@ -10,12 +8,12 @@ class NodeMeta(type):
                 instance.name = name
                 break
         
-        instance.node_id = NodeMeta._node_count
-        NodeMeta._node_count += 1
+        instance.node_id = _NodeMeta._node_count
+        _NodeMeta._node_count += 1
         
         return instance
 
-class Node(metaclass=NodeMeta):
+class Node(metaclass=_NodeMeta):
     """
     Base class for all nodes in the network, not to be used directly.
 
@@ -28,13 +26,8 @@ class Node(metaclass=NodeMeta):
         self.outputValue = []
         self.history = []
     
-    def add_input(self, node):
+    def _add_input(self, node):
         self.inputs.append(node)
     
-    def add_output(self, node):
+    def _add_output(self, node):
         self.outputs.append(node)
-
-    def plotOutputHistory(self):
-        plt.plot(self.history)
-        plt.title(f"Output Values For Node {self.name}")
-        plt.show()

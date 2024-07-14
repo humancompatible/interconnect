@@ -8,7 +8,7 @@ class MyTestCase(unittest.TestCase):
     def test_propagation(self):
         signal = [1]
         cont = PIController("PIC", logic=PIControllerLogic.PIControllerLogic(), sp=5)
-        output = cont.step(signal)[0]
+        output = cont._step(signal)[0]
         self.assertEqual([output, 4], [cont.logic.propagated["pi_prev"], cont.logic.propagated["e_prev"]])
 
 
