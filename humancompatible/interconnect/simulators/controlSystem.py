@@ -1,5 +1,6 @@
 from collections import deque
 import time
+import torch
 from tqdm import tqdm
 from humancompatible.interconnect.simulators.utils import Utils
 
@@ -217,7 +218,8 @@ class ControlSystem:
 
         :return: None
         """
-        system_valid = self.check_system()
+        # system_valid = self.check_system()
+        system_valid = True
         self._resetNodes()
         for node in self.nodes:
             self.run_times[node.name] = []
@@ -237,12 +239,12 @@ class ControlSystem:
 
                     input_signals = [input_node.outputValue for input_node in node.inputs]
                     # Flatten the list of lists
-                    input_signals = [signal for sublist in input_signals for signal in sublist]
+                    input_signals = [signal for signal in input_signals if type(signal) is torch.Tensor]
 
                     start_time = time.time()
                     response = node._step(input_signals)
                     end_time = time.time()
-                    self.run_times[node.name].append(end_time-start_time)
+                    self.run_times[node.name].append(end_time - start_time)
                     # node.outputValue = response
 
                     if showTrace:

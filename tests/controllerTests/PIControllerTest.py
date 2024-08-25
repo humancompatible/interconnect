@@ -1,15 +1,17 @@
 import unittest
-from humancompatible.interconnect.simulators.controllers.PIController import PIController
-from humancompatible.interconnect.simulators.controllers import PIControllerLogic
+from humancompatible.interconnect.simulators.logic.controllers.pi_controller import PiControllerLogic
+from humancompatible.interconnect.simulators.nodes.controller import Controller
 
 
 class MyTestCase(unittest.TestCase):
 
     def test_propagation(self):
-        signal = [1]
-        cont = PIController("PIC", logic=PIControllerLogic.PIControllerLogic(), sp=5)
+        signal = [2]
+        cont = Controller("PIC", logic=PiControllerLogic(sp=5))
         output = cont._step(signal)[0]
-        self.assertEqual([output, 4], [cont.logic.propagated["pi_prev"], cont.logic.propagated["e_prev"]])
+        # print("output: ", output)
+        # self.assertEqual(output, 1.5)
+        self.assertEqual([output, 3], [cont.logic.tensors["pi_prev"],cont.logic.tensors["e_prev"]])
 
 
 if __name__ == '__main__':

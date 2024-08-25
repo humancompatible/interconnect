@@ -6,3 +6,4 @@ numpy==1.24.3
 pytest==7.4.3
 sympy==1.11.1
 tqdm==4.64.1
+torch==2.3.1

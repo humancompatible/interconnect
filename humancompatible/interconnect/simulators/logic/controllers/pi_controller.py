@@ -1,33 +1,23 @@
-import sympy
+import torch
 
 
-class PIControllerLogic:
+class PiControllerLogic:
     def __init__(self, kappa=0.5, alpha=0.1, sp=0.0):
-        self.input_variables = ["signal"]
+        self.tensors = {"S": torch.tensor([0.0], requires_grad=True),
+                        "kappa": torch.tensor([kappa], requires_grad=True, dtype=torch.float),
+                        "alpha": torch.tensor([alpha], requires_grad=True, dtype=torch.float),
+                        "sp": torch.tensor([sp], requires_grad=True, dtype=torch.float),
+                        "e": torch.tensor([0.0], requires_grad=True),
+                        "e_prev": torch.tensor([0.0], requires_grad=True),
+                        "pi_prev": torch.tensor([0.0], requires_grad=True)
+                        }
+        self.variables = ["S"]
 
-        self.pi_prev = sympy.Symbol("pi_prev")
-        self.e = sympy.Symbol("e")
-        self.e_prev = sympy.Symbol("e_prev")
-        self.kappa = sympy.Symbol("kappa")
-        self.alpha = sympy.Symbol("alpha")
-        self.sp = sympy.Symbol("sp")
-
-        self.expression = (
-            self.pi_prev + self.kappa * (self.e - self.alpha * self.e_prev)
-        )
-
-        self.constants = {self.kappa: kappa, self.alpha: alpha, self.sp: sp}
-
-        self.state = {self.pi_prev: 0, self.e_prev: 0}
-
-    def evaluate(self, variable_values):
-        self.state[self.e] = self.sp - variable_values["signal"]
-
-        result = self.expression.subs(self.state).subs(self.constants)
-
-        output = float(result)
-
-        self.state[self.e_prev] = self.state[self.e]
-        self.state[self.pi_prev] = output
-
-        return output
+    def forward(self, values):
+        self.tensors["S"] = torch.tensor([values["S"]], requires_grad=True, dtype=torch.float)
+        self.tensors["e"] = self.tensors["sp"] - self.tensors["S"]
+        result = (self.tensors["pi_prev"] + self.tensors["kappa"] * (
+                    self.tensors["e"] - self.tensors["alpha"] * self.tensors["e_prev"]))
+        self.tensors["e_prev"] = self.tensors["e"]
+        self.tensors["pi_prev"] = result
+        return result
