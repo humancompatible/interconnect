@@ -14,5 +14,5 @@ class Controller(Node):
         variable_values = dict(zip(self.logic.variables, signal))
         self.outputValue = self.logic.forward(variable_values)
 
-        self.history.append(self.outputValue)
+        self.history.append(self.outputValue.detach().numpy())
         return self.outputValue

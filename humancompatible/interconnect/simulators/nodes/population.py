@@ -23,5 +23,5 @@ class Population(Node):
         responses = torch.where(random_numbers < probability, self.positive_response, self.negative_response)
 
         self.outputValue = responses
-        self.history.append(self.outputValue)
+        self.history.append(self.outputValue.detach().numpy())
         return self.outputValue

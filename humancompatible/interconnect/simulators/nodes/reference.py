@@ -15,5 +15,5 @@ class ReferenceSignal(Node):
 
     def _step(self, signal):
         self.outputValue = self.ReferenceSignal
-        self.history.append(self.outputValue)
+        self.history.append(self.outputValue.detach().numpy())
         return self.outputValue

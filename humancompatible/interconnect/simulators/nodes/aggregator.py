@@ -9,5 +9,5 @@ class Aggregator(Node):
 
     def _step(self, signal):
         self.outputValue = self.logic.forward(signal)
-        self.history.append(self.outputValue)
+        self.history.append(self.outputValue.detach().numpy())
         return self.outputValue

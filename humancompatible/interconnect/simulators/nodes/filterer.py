@@ -1,5 +1,4 @@
 from humancompatible.interconnect.simulators.nodes.base_node import Node
-import sympy
 
 
 class Filterer(Node):
@@ -19,5 +18,5 @@ class Filterer(Node):
         # Evaluate the substituted expression
         self.outputValue = self.logic.forward(variable_values)
 
-        self.history.append(self.outputValue)
+        self.history.append(self.outputValue.detach().numpy())
         return self.outputValue
