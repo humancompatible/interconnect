@@ -79,8 +79,7 @@ class Population(Node):
             raise ValueError("Number of signal inputs does not match the number of variables.")
 
         variable_values = dict(zip(self.logic.variables, signal))
-        evaluated = self.logic.forward(variable_values)
-        probability = float(evaluated)
+        probability = self.logic.forward(variable_values)
 
         random_numbers = torch.rand(self.number_of_agents)
         responses = torch.where(random_numbers < probability, self.positive_response, self.negative_response)
