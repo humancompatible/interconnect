@@ -50,9 +50,9 @@ class Population(Node):
         :param number_of_agents: The number of agents in the population.
         :type number_of_agents: int
         :param positive_response: The value to return for a positive response.
-        :type positive_response: torch.Tensor
+        :type positive_response: float
         :param negative_response: The value to return for a negative response.
-        :type negative_response: torch.Tensor
+        :type negative_response: float
         """
         self.type = "Population"
         super().__init__(name=name)
@@ -79,10 +79,7 @@ class Population(Node):
             raise ValueError("Number of signal inputs does not match the number of variables.")
 
         variable_values = dict(zip(self.logic.variables, signal))
-        probability = self.logic.forward(variable_values)
-
-        random_numbers = torch.rand(self.number_of_agents)
-        responses = torch.where(random_numbers < probability, self.positive_response, self.negative_response)
+        responses = self.logic.forward(variable_values, self.number_of_agents)
 
         self.outputValue = responses
         self.history.append(self.outputValue.detach().numpy())

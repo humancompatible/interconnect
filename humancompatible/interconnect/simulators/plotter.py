@@ -66,11 +66,11 @@ class Plotter:
             return
 
         for node in population_nodes:
-            logic = deepcopy(node.logic)
+            logic = node.logic
 
             with torch.inference_mode():
                 x_values = torch.linspace(xMin, xMax, 100)
-                y_values = logic.forward({"x": x_values})
+                y_values = logic.forward({"x": x_values}, 1).squeeze()
 
             plt.plot(x_values, y_values, label=node.name)
 
