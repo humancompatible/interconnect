@@ -8,7 +8,7 @@ class Population(Node):
 
     The Population class represents a group of agents whose responses are determined by a
     probability function defined in the provided logic. It takes an input signal, evaluates
-    the probability for each agent, and returns a list of responses (positive or negative).
+    the probability for each agent, and returns a list of responses.
 
     To create a new logic class for use with the `Population` class, follow these guidelines:
 
@@ -39,7 +39,7 @@ class Population(Node):
 
     """
 
-    def __init__(self, name, logic, number_of_agents, positive_response, negative_response):
+    def __init__(self, name, logic, number_of_agents):
         """
         Initialize a new Population instance.
 
@@ -49,25 +49,15 @@ class Population(Node):
         :type logic: object
         :param number_of_agents: The number of agents in the population.
         :type number_of_agents: int
-        :param positive_response: The value to return for a positive response.
-        :type positive_response: float
-        :param negative_response: The value to return for a negative response.
-        :type negative_response: float
         """
         self.type = "Population"
         super().__init__(name=name)
         self.logic = logic
         self.number_of_agents = number_of_agents
-        self.positive_response = torch.tensor([positive_response], requires_grad=True, dtype=torch.float)
-        self.negative_response = torch.tensor([negative_response], requires_grad=True, dtype=torch.float)
 
     def _step(self, signal):
         """
         Process the input signal and generate responses for each agent in the population.
-
-        This method evaluates the probability of a positive response based on the input signal
-        and the logic. It then generates a random response for each agent based on
-        this probability.
 
         :param signal: A list of input values corresponding to the variables in the logic expression.
         :type signal: list
