@@ -1,6 +1,7 @@
 from collections import deque
 import time
 import torch
+import torch.nn as nn
 from tqdm import tqdm
 from humancompatible.interconnect.simulators.utils import Utils
 
@@ -15,7 +16,7 @@ class ControlSystem:
         self.checkpointNode = None
         self.iteration_count = 0
         self.run_times = {}
-    
+
     def add_node(self, node):
         """
         Add a node to the control system.
@@ -37,7 +38,7 @@ class ControlSystem:
         :return: None
         """
         self.nodes.extend(nodes)
-    
+
     def remove_node(self, node):
         """
         Remove a node from the control system.
@@ -69,7 +70,7 @@ class ControlSystem:
             if node not in self.nodes:
                 raise ValueError(f"Node {node.name} is not in the list of nodes.")
             self.nodes.remove(node)
-    
+
     def connect_nodes(self, node1, node2):
         """
         Connect two nodes in the control system.
@@ -80,7 +81,7 @@ class ControlSystem:
         :param node2: The second node, that will receive signals from the first node.
         :type node2: Node object (e.g. Controller, Filterer, Population), required
 
-        :raises ValueError: If either node is not in the list of nodes.        
+        :raises ValueError: If either node is not in the list of nodes.
 
         :return: None
         """
@@ -123,7 +124,7 @@ class ControlSystem:
                 # Check for many-to-one connections for non-Aggregator nodes
                 if len(node.inputs) > 1 and node.type != "Aggregator":
                     errors.append(f"Node {node.name} has multiple input connections but is not an Aggregator.")
-                
+
                 # Check for nodes with no connections
                 if len(node.inputs) == 0 and len(node.outputs) == 0:
                     errors.append(f"Node {node.name} is not connected to any other node.")
@@ -206,7 +207,7 @@ class ControlSystem:
             raise ValueError("Node is not in the list of nodes.")
         self.checkpointNode = node
 
-    def run(self, iterations, showTrace=False):
+    def run(self, iterations, show_trace=False, show_loss=False, learning_node=None):
         """
         Run the control system for a specified number of iterations.
 
@@ -218,6 +219,14 @@ class ControlSystem:
 
         :return: None
         """
+        if learning_node is not None:
+            model = learning_node.logic.model
+            loss_fn = nn.L1Loss()
+            optimizer = torch.optim.SGD(model.parameters(),
+                                        lr=0.05)
+            model.train()
+            torch.autograd.set_detect_anomaly(True)
+
         # system_valid = self.check_system()
         system_valid = True
         self._resetNodes()
@@ -236,7 +245,7 @@ class ControlSystem:
                         continue
                     visited.add(node)
 
-                    if showTrace:
+                    if show_trace:
                         print(f"NODE: {node.name}\n   INPUT: {[input_node.outputValue for input_node in node.inputs]}")
 
                     input_signals = [input_node.outputValue for input_node in node.inputs]
@@ -249,12 +258,22 @@ class ControlSystem:
                     self.run_times[node.name].append(end_time - start_time)
                     # node.outputValue = response
 
-                    if showTrace:
+                    if show_trace:
                         print(f"   OUTPUT: {response}")
 
                     if node == self.checkpointNode:
+                        if (learning_node is not None) and (self.iteration_count != 0):
+                            cur_loss = loss_fn(-input_signals[1], input_signals[0])
+                            optimizer.zero_grad()
+                            cur_loss.backward(retain_graph=False)
+                            optimizer.step()
+
                         self.iteration_count += 1
-                        if showTrace:
+
+                        if show_loss and (learning_node is not None) and (self.iteration_count != 1):
+                            print(f"Loss: {cur_loss}")
+
+                        if show_trace:
                             print(f"Checkpoint: Iteration {self.iteration_count-1}")
                         visited.clear()  # Clear the visited set for the next iteration
                         pbar.update(1)  # Update the progress bar

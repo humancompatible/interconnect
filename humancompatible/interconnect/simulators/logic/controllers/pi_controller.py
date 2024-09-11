@@ -2,7 +2,7 @@ import torch
 
 
 class PiControllerLogic:
-    def __init__(self, kappa=0.5, alpha=0.1):
+    def __init__(self, kappa=0.000001, alpha=0.000001):
         self.tensors = {"kappa": torch.tensor([kappa], requires_grad=True, dtype=torch.float),
                         "alpha": torch.tensor([alpha], requires_grad=True, dtype=torch.float),
                         "e": torch.tensor([0.0], requires_grad=True),
