@@ -232,6 +232,8 @@ class ControlSystem:
             with tqdm(total=iterations, desc="Running Control System") as pbar:
                 while self.iteration_count < iterations+1:
                     node = queue.popleft()
+                    if node in visited:
+                        continue
                     visited.add(node)
 
                     if showTrace:
