@@ -163,7 +163,7 @@ class ControlSystem:
             if unreachable_nodes:
                 errors.append(f"Unreachable nodes detected: {', '.join([node.name for node in unreachable_nodes])}")
 
-        #check there is at least one population node
+        # check there is at least one population node
         population_nodes = [node for node in self.nodes if node.type == "Population"]
         if len(population_nodes) == 0:
             errors.append("No Population nodes have been added to the control system.")
@@ -227,8 +227,7 @@ class ControlSystem:
             model.train()
             torch.autograd.set_detect_anomaly(True)
 
-        # system_valid = self.check_system()
-        system_valid = True
+        system_valid = self.check_system()
         self._resetNodes()
         for node in self.nodes:
             self.run_times[node.name] = []
@@ -256,7 +255,6 @@ class ControlSystem:
                     response = node._step(input_signals)
                     end_time = time.time()
                     self.run_times[node.name].append(end_time - start_time)
-                    # node.outputValue = response
 
                     if show_trace:
                         print(f"   OUTPUT: {response}")

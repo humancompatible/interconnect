@@ -52,6 +52,7 @@ class Population(Node):
         """
         self.type = "Population"
         super().__init__(name=name)
+        self._logic_check(logic)
         self.logic = logic
         self.number_of_agents = number_of_agents
 
@@ -74,3 +75,9 @@ class Population(Node):
         self.outputValue = responses
         self.history.append(self.outputValue.detach().numpy())
         return self.outputValue
+
+    def _logic_check(self, logic):
+        required_attributes = ["tensors", "variables", "forward"]
+        missing_attributes = [attr for attr in required_attributes if not hasattr(logic, attr)]
+        if missing_attributes:
+            raise ValueError(f"Logic class is missing the following attributes/methods: {missing_attributes}")

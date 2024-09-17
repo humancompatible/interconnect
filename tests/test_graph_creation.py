@@ -13,7 +13,7 @@ from humancompatible.interconnect.simulators.nodes.reference import ReferenceSig
 from humancompatible.interconnect.simulators.nodes.delay import Delay
 from humancompatible.interconnect.simulators.nodes.population import Population
 from humancompatible.interconnect.simulators.nodes.base_node import Node
-from humancompatible.interconnect.simulators.logic.controllers.pi_controller import PIControllerLogic
+from humancompatible.interconnect.simulators.logic.controllers.pi_controller import PiControllerLogic
 
 
 
@@ -54,9 +54,9 @@ def test_successful_system_creation():
     agg1 = Aggregator(name="A1", logic=AggregatorLogic())
     agg2 = Aggregator(name="A2", logic=AggregatorLogic())
     
-    cont = Controller(name="C", logic=PIControllerLogic())
+    cont = Controller(name="C", logic=PiControllerLogic())
     
-    pop = Population(name="P", logic=AgentLogic(), number_of_agents=1000000, positive_response=1, negative_response=0)
+    pop = Population(name="P", logic=AgentLogic(), number_of_agents=1000000)
     
     fil = Filterer(name="F", logic=FiltererLogic())
     
@@ -84,8 +84,8 @@ def test_successful_system_creation():
 
 def test_duplicate_node_names():
     sim = Simulation()
-    node1 = Controller(name="C", logic=PIControllerLogic())
-    node2 = Controller(name="C", logic=PIControllerLogic())
+    node1 = Controller(name="C", logic=PiControllerLogic())
+    node2 = Controller(name="C", logic=PiControllerLogic())
     sim.system.add_nodes([node1, node2])
     sim.system.connect_nodes(node1,node2)
     sim.system.set_start_node(node1)
@@ -101,7 +101,7 @@ def test_invalid_node_type():
             self.type = "InvalidTest"
             super().__init__(name=name)
 
-    node1 = Controller(name="C", logic=PIControllerLogic())
+    node1 = Controller(name="C", logic=PiControllerLogic())
     invalid_node = InvalidNode(name="I")
     sim.system.add_nodes([node1,invalid_node])
     sim.system.connect_nodes(node1,invalid_node)
@@ -113,9 +113,9 @@ def test_invalid_node_type():
 
 def test_multiple_inputs_non_aggregator():
     sim = Simulation()
-    node1 = Controller(name="C1", logic=PIControllerLogic())
-    node2 = Controller(name="C2", logic=PIControllerLogic())
-    node3 = Controller(name="C3", logic=PIControllerLogic())
+    node1 = Controller(name="C1", logic=PiControllerLogic())
+    node2 = Controller(name="C2", logic=PiControllerLogic())
+    node3 = Controller(name="C3", logic=PiControllerLogic())
     sim.system.add_nodes([node1, node2, node3])
     sim.system.connect_nodes(node1, node3)
     sim.system.connect_nodes(node2, node3)
@@ -128,9 +128,9 @@ def test_multiple_inputs_non_aggregator():
 
 def test_unconnected_node():
     sim = Simulation()
-    node1 = Controller(name="C1", logic=PIControllerLogic())
-    node2 = Controller(name="C2", logic=PIControllerLogic())
-    node3 = Controller(name="C3", logic=PIControllerLogic())
+    node1 = Controller(name="C1", logic=PiControllerLogic())
+    node2 = Controller(name="C2", logic=PiControllerLogic())
+    node3 = Controller(name="C3", logic=PiControllerLogic())
     sim.system.add_nodes([node1, node2, node3])
     sim.system.connect_nodes(node1, node3)
 
@@ -142,9 +142,9 @@ def test_unconnected_node():
 
 def test_no_start_node():
     sim = Simulation()
-    node1 = Controller(name="C1", logic=PIControllerLogic())
-    node2 = Controller(name="C2", logic=PIControllerLogic())
-    node3 = Controller(name="C3", logic=PIControllerLogic())
+    node1 = Controller(name="C1", logic=PiControllerLogic())
+    node2 = Controller(name="C2", logic=PiControllerLogic())
+    node3 = Controller(name="C3", logic=PiControllerLogic())
     sim.system.add_nodes([node1, node2, node3])
     sim.system.connect_nodes(node1, node2)
     sim.system.connect_nodes(node2,node3)
@@ -157,9 +157,9 @@ def test_no_start_node():
 
 def test_no_checkpoint_node():
     sim = Simulation()
-    node1 = Controller(name="C1", logic=PIControllerLogic())
-    node2 = Controller(name="C2", logic=PIControllerLogic())
-    node3 = Controller(name="C3", logic=PIControllerLogic())
+    node1 = Controller(name="C1", logic=PiControllerLogic())
+    node2 = Controller(name="C2", logic=PiControllerLogic())
+    node3 = Controller(name="C3", logic=PiControllerLogic())
     sim.system.add_nodes([node1, node2, node3])
     sim.system.connect_nodes(node1, node2)
     sim.system.connect_nodes(node2,node3)
@@ -172,10 +172,10 @@ def test_no_checkpoint_node():
 
 def test_no_loop_back_to_checkpoint():
     sim = Simulation()
-    node1 = Controller(name="C1", logic=PIControllerLogic())
-    node2 = Controller(name="C2", logic=PIControllerLogic())
+    node1 = Controller(name="C1", logic=PiControllerLogic())
+    node2 = Controller(name="C2", logic=PiControllerLogic())
     node3 = Aggregator(name="A3", logic=AggregatorLogic())
-    node4 = Controller(name="C4", logic=PIControllerLogic())
+    node4 = Controller(name="C4", logic=PiControllerLogic())
 
     sim.system.add_nodes([node1, node2, node3, node4])
     sim.system.connect_nodes(node1, node2)
@@ -190,9 +190,9 @@ def test_no_loop_back_to_checkpoint():
 
 def test_unreachable_node():
     sim = Simulation()
-    node1 = Controller(name="C1", logic=PIControllerLogic())
-    node2 = Controller(name="C2", logic=PIControllerLogic())
-    node3 = Controller(name="C3", logic=PIControllerLogic())
+    node1 = Controller(name="C1", logic=PiControllerLogic())
+    node2 = Controller(name="C2", logic=PiControllerLogic())
+    node3 = Controller(name="C3", logic=PiControllerLogic())
     sim.system.add_nodes([node1, node2, node3])
     sim.system.connect_nodes(node1, node2)
     sim.system.set_start_node(node1)
@@ -207,7 +207,7 @@ def test_no_population_node():
     ref.set_reference_signal(0.5)
     
     agg1 = Aggregator(name="A1", logic=AggregatorLogic())
-    cont = Controller(name="C", logic=PIControllerLogic())
+    cont = Controller(name="C", logic=PiControllerLogic())
     fil = Filterer(name="F", logic=FiltererLogic())
     
     sim.system.add_nodes([ref, agg1, cont, fil])

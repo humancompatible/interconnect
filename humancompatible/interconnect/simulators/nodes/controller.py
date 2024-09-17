@@ -49,6 +49,7 @@ class Controller(Node):
         """
         super().__init__(name=name)
         self.type = "Controller"
+        self._logic_check(logic)
         self.logic = logic
 
     def _step(self, signal):
@@ -75,3 +76,9 @@ class Controller(Node):
 
         self.history.append(self.outputValue.detach().numpy())
         return self.outputValue
+
+    def _logic_check(self, logic):
+        required_attributes = ["tensors", "variables", "forward"]
+        missing_attributes = [attr for attr in required_attributes if not hasattr(logic, attr)]
+        if missing_attributes:
+            raise ValueError(f"Logic class is missing the following attributes/methods: {missing_attributes}")
