@@ -238,7 +238,7 @@ class ControlSystem:
             visited = set()
 
             with tqdm(total=iterations, desc="Running Control System") as pbar:
-                while self.iteration_count < iterations+1:
+                while self.iteration_count < iterations:
                     node = queue.popleft()
                     if node in visited:
                         continue
