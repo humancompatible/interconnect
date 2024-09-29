@@ -220,7 +220,7 @@ class ControlSystem:
         :return: None
         """
         if learning_node is not None:
-            model = learning_node.logic.model
+            model = learning_node.logic
             loss_fn = nn.L1Loss()
             optimizer = torch.optim.SGD(model.parameters(),
                                         lr=0.05)
@@ -260,7 +260,7 @@ class ControlSystem:
                         print(f"   OUTPUT: {response}")
 
                     if node == self.checkpointNode:
-                        if (learning_node is not None) and (self.iteration_count != 0):
+                        if (learning_node is not None) and (self.iteration_count != 0) and (self.iteration_count != iterations-1):
                             cur_loss = loss_fn(-input_signals[1], input_signals[0])
                             optimizer.zero_grad()
                             cur_loss.backward(retain_graph=False)
