@@ -173,7 +173,6 @@ class ControlSystem:
         else:
             return True
 
-
     def set_start_node(self, node):
         """
         Set the start node for the control system.
@@ -222,8 +221,8 @@ class ControlSystem:
         if learning_node is not None:
             model = learning_node.logic
             loss_fn = nn.L1Loss()
-            optimizer = torch.optim.SGD(model.parameters(),
-                                        lr=0.05)
+            optimizer = torch.optim.Adam(model.parameters(),
+                                         lr=0.01)
             model.train()
             torch.autograd.set_detect_anomaly(True)
 
@@ -260,7 +259,8 @@ class ControlSystem:
                         print(f"   OUTPUT: {response}")
 
                     if node == self.checkpointNode:
-                        if (learning_node is not None) and (self.iteration_count != 0) and (self.iteration_count != iterations-1):
+                        if (learning_node is not None) and (self.iteration_count != 0) and (
+                                self.iteration_count != iterations - 1):
                             cur_loss = loss_fn(-input_signals[1], input_signals[0])
                             optimizer.zero_grad()
                             cur_loss.backward(retain_graph=False)
@@ -272,7 +272,7 @@ class ControlSystem:
                             print(f"Loss: {cur_loss}")
 
                         if show_trace:
-                            print(f"Checkpoint: Iteration {self.iteration_count-1}")
+                            print(f"Checkpoint: Iteration {self.iteration_count - 1}")
                         visited.clear()  # Clear the visited set for the next iteration
                         pbar.update(1)  # Update the progress bar
 
