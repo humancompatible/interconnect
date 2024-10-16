@@ -16,6 +16,9 @@ class ControlSystem:
         self.checkpointNode = None
         self.iteration_count = 0
         self.run_times = {}
+        self.learning_model = None
+        self.loss_function = None
+        self.optimizer = None
 
     def add_node(self, node):
         """
@@ -91,6 +94,23 @@ class ControlSystem:
 
         node1._add_output(node2)
         node2._add_input(node1)
+
+    def get_node(self, name):
+        """
+        Get a node from the node list by its name.
+
+        :param name: The name of the node.
+        :type name: str
+
+        :return: The node with the given name.
+        :rtype: Node
+
+        :raises ValueError: If the node is not in the list of nodes.
+        """
+        for node in self.nodes:
+            if node.name == name:
+                return node
+        raise ValueError(f"Node with name {name} does not exist.")
 
     def check_system(self):
         """
@@ -206,24 +226,55 @@ class ControlSystem:
             raise ValueError("Node is not in the list of nodes.")
         self.checkpointNode = node
 
-    def run(self, iterations, show_trace=False, show_loss=False, learning_node=None):
+    def set_learning_model(self, learning_model):
+        """
+        Set the learning model for the control system.
+
+        :param learning_model: The learning model to set.
+
+        :return: None
+
+        """
+        self.learning_model = learning_model
+
+    def set_loss_function(self, loss_function):
+        """
+        Set the loss function for the control system.
+
+        :param loss_function: The loss function to set.
+        :type loss_function: torch.nn.modules.loss
+
+        :return: None
+        """
+        self.loss_function = loss_function
+
+    def set_optimizer(self, optimizer):
+        """
+        Set the optimizer for the control system.
+        :param optimizer: The optimizer that will be used for training.
+        :type optimizer: torch.optim.Optimizer
+
+        :return: None
+        """
+        self.optimizer = optimizer
+
+    def run(self, iterations, show_trace=False, show_loss=False):
         """
         Run the control system for a specified number of iterations.
 
         :param iterations: The number of iterations to run the control system for.
         :type iterations: Integer, required
 
-        :param showTrace: Whether to display the trace of the control system during execution.
-        :type showTrace: Boolean, optional, default=False
+        :param show_trace: Whether to display the trace of the control system during execution.
+        :type show_trace: Boolean, optional, default=False
+
+        :param show_loss: Whether to display the loss during execution.
+        :type show_loss: Boolean, optional, default=False
 
         :return: None
         """
-        if learning_node is not None:
-            model = learning_node.logic
-            loss_fn = nn.L1Loss()
-            optimizer = torch.optim.Adam(model.parameters(),
-                                         lr=0.01)
-            model.train()
+        if self.learning_model is not None:
+            self.learning_model.train()
             torch.autograd.set_detect_anomaly(True)
 
         system_valid = self.check_system()
@@ -259,16 +310,16 @@ class ControlSystem:
                         print(f"   OUTPUT: {response}")
 
                     if node == self.checkpointNode:
-                        if (learning_node is not None) and (self.iteration_count != 0) and (
+                        if (self.learning_model is not None) and (self.iteration_count != 0) and (
                                 self.iteration_count != iterations - 1):
-                            cur_loss = loss_fn(-input_signals[1], input_signals[0])
-                            optimizer.zero_grad()
+                            cur_loss = self.loss_function(-input_signals[1], input_signals[0])
+                            self.optimizer.zero_grad()
                             cur_loss.backward(retain_graph=False)
-                            optimizer.step()
+                            self.optimizer.step()
 
                         self.iteration_count += 1
 
-                        if show_loss and (learning_node is not None) and (self.iteration_count != 1):
+                        if show_loss and (self.learning_model is not None) and (self.iteration_count != 1):
                             print(f"Loss: {cur_loss}")
 
                         if show_trace:
