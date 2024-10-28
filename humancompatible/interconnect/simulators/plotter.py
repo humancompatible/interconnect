@@ -70,12 +70,12 @@ class Plotter:
 
             with torch.inference_mode():
                 x_values = torch.linspace(xMin, xMax, 100)
-                y_values = logic.forward({"x": x_values}, 1).squeeze()
+                y_values = logic.probability_function(x_values).squeeze()
 
             plt.plot(x_values, y_values, label=node.name)
 
         plt.grid(True, which="both", ls="-", alpha=0.2)
-        plt.title("Probability Functions of Population Nodes")
+        plt.title("Probability Functions of Agents in Populations")
         plt.xlabel("Input Signal")
         plt.ylabel("Probability")
         plt.legend()
