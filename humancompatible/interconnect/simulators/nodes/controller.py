@@ -74,7 +74,7 @@ class Controller(Node):
         # Compute the output
         self.outputValue = self.logic.forward(variable_values)
 
-        self.history.append(self.outputValue.detach().numpy())
+        self.history.append(self.outputValue)
         return self.outputValue
 
     def _logic_check(self, logic):

@@ -9,5 +9,5 @@ class Delay(Node):
 
     def _step(self, signal):
         self.outputValue = signal[0]
-        self.history.append(self.outputValue.detach().numpy())
+        self.history.append(self.outputValue)
         return self.outputValue

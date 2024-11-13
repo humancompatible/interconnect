@@ -52,7 +52,6 @@ class Filterer(Node):
         self.type = "Filterer"
         self._logic_check(logic)
         self.logic = logic
-        self.tensor_history = []
 
     def _step(self, signal):
         """
@@ -76,8 +75,7 @@ class Filterer(Node):
         # Evaluate the substituted expression
         self.outputValue = self.logic.forward(variable_values)
 
-        self.history.append(self.outputValue.detach().numpy())
-        self.tensor_history.append(self.outputValue)
+        self.history.append(self.outputValue)
         return self.outputValue
 
     def _logic_check(self, logic):

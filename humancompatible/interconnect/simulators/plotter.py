@@ -46,7 +46,7 @@ class Plotter:
             return
 
         plt.figure()
-        plt.plot(node.history)
+        plt.plot([h.detach().numpy() for h in node.history])
         plt.title(f"Output Values For Node {node.name}")
         plt.xlabel("Time Step")
         plt.ylabel("Output Value")

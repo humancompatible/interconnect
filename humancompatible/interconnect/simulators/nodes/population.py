@@ -73,7 +73,7 @@ class Population(Node):
         responses = self.logic.forward(variable_values, self.number_of_agents)
 
         self.outputValue = responses
-        self.history.append(self.outputValue.detach().numpy())
+        self.history.append(self.outputValue)
         return self.outputValue
 
     def _logic_check(self, logic):
