@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import matplotlib.pyplot as plt
+import numpy as np
 from humancompatible.interconnect.simulators.nodes.reference import ReferenceSignal
 from humancompatible.interconnect.simulators.nodes.aggregator import Aggregator
 from humancompatible.interconnect.simulators.nodes.controller import Controller
@@ -57,17 +58,17 @@ class PiControllerLogic(torch.nn.Module):
 
 
 class AgentLogic:
-    def __init__(self, s_const1=1.0, s_const2=0.0):
+    def __init__(self, probability=0.5):
         self.tensors = {"x": torch.tensor([0.0], requires_grad=True),
-                        "pi": torch.tensor([0.0], requires_grad=True),
-                        "s_const1": torch.tensor([s_const1], requires_grad=True, dtype=torch.float),
-                        "s_const2": torch.tensor([s_const2], requires_grad=True, dtype=torch.float)}
+                        "pi": torch.tensor([0.0], requires_grad=True)}
         self.variables = ["p"]
+        self.probability = probability
 
     def forward(self, values, number_of_agents):
         self.tensors["p"] = values["p"]
-        f1_part = torch.bernoulli(torch.ones(1, 1) * 0.5) * 0.6
+        f1_part = torch.bernoulli(torch.ones(1, 1) * self.probability) * 0.6
         # f1_part = torch.bernoulli(torch.ones(1, 1) * 0.5) / number_of_agents
+        # result = f1_part * self.tensors["p"] + (1 - f1_part) * (2.2 * self.tensors["p"] - 10.0)
         result = f1_part * self.tensors["p"] + (1 - f1_part) * (self.tensors["p"] - 10.0)
         # result = f1_part * self.tensors["p"]
         return result
@@ -87,15 +88,15 @@ class FiltererLogic:
         return result
 
 
-def create_system(reference_signal):
+def create_system(reference_signal, probability):
     # create nodes
     refsig = ReferenceSignal(name="r")
     refsig.set_reference_signal(reference_signal)
     agg1 = Aggregator(name="A1", logic=AggregatorLogic1())
     agg2 = Aggregator(name="A2", logic=AggregatorLogic2())
     cont = Controller(name="C", logic=PiControllerLogic(kp=0.5, ki=0.5))
-    pop1 = Population(name="P1", logic=AgentLogic(), number_of_agents=1000)
-    pop2 = Population(name="P2", logic=AgentLogic(s_const2=-1.0), number_of_agents=1000)
+    pop1 = Population(name="P1", logic=AgentLogic(probability=probability), number_of_agents=1000)
+    pop2 = Population(name="P2", logic=AgentLogic(probability=probability), number_of_agents=1000)
     delay = Delay(name="Z", time=1)
     fil = Filterer(name="F", logic=FiltererLogic())
 
@@ -123,43 +124,51 @@ def create_system(reference_signal):
     return sim
 
 
-def contraction(references):
-
-    sim = [create_system(r) for r in references]
-    sim[1].system.get_node("F").logic.tensors["K"] = torch.tensor([3.2], requires_grad=True)
-
-    for i in range(len(references)):
-        sim[i].system.run(100, show_trace=False, show_loss=False)
-
-    history = [sim[i].system.get_node("A1").history for i in range(len(references))]
-
+def draw_plots(agent_probs, history, g_history):
     # plot node histories
     fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
-    for i in range(len(references)):
-        ax1.plot(history[i], label=f"Sim {i}")
+    for i in range(len(history)):
+        ax1.plot([h.detach().numpy() for h in history[i]], label=f"Sim p = {agent_probs[i]}")
     ax1.set_title("Node output values")
     ax1.legend()
     ax1.set_xlabel("Time Step")
     ax1.set_ylabel("Value")
 
-    # get gradients
-    g = [list() for _ in range(len(references))]
-    for i in range(len(references)):
-        inputs = sim[i].system.get_node("A1").tensor_history
-        outputs = sim[i].system.get_node("F").tensor_history
-        n = min(len(inputs), len(outputs))
-        g[i] = [(torch.autograd.grad(outputs[j], inputs[j], retain_graph=True)[0]).detach().numpy() for j in range(n)]
-
     # plot gradient histories
-    for i in range(len(references)):
-        ax2.plot(g[i], label=f"Grads in Sim {i}")
+    for i in range(len(agent_probs)):
+        ax2.plot(g_history[i], label=f"Grads in Sim p = {agent_probs[i]}")
     ax2.set_title("Gradients")
     ax2.legend()
     ax2.set_xlabel("Time Step")
-    ax2.set_ylim([-1.0, 1.0])
     ax2.set_ylabel("Gradient Value")
     plt.show()
+    return
+
+
+def contraction(reference_signal, agent_probs, it=100, make_plots=False):
+    sim = [create_system(reference_signal, p) for p in agent_probs]
+
+    for i in range(len(agent_probs)):
+        sim[i].system.run(it, show_trace=False, show_loss=False)
+
+    history = [sim[i].system.get_node("A1").history for i in range(len(agent_probs))]
+
+    # get gradients
+    g_history = [np.empty(1) for _ in range(len(agent_probs))]
+    for i in range(len(agent_probs)):
+        inputs = sim[i].system.get_node("A1").history
+        outputs = sim[i].system.get_node("F").history
+        n = min(len(inputs), len(outputs))
+        g_history[i] = np.array([(torch.autograd.grad(outputs[j], inputs[j], retain_graph=True)[0]).detach().numpy() for j in range(n)]).squeeze()
+    max_g = np.max(np.abs(g_history), axis=1)
+
+    if make_plots:
+        draw_plots(agent_probs, history, g_history)
+
+    r_factor = np.sum(max_g * 0.5)
+    return r_factor
 
 
 if __name__ == '__main__':
-    contraction([100.0, 500.0])
+    r = contraction(reference_signal=300.0, agent_probs=[0.0, 1.0], it=100, make_plots=True)
+    print(f"Factor = {r}")
