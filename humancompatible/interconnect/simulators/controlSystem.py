@@ -314,7 +314,7 @@ class ControlSystem:
                                 self.iteration_count != iterations - 1):
                             cur_loss = self.loss_function(-input_signals[1], input_signals[0])
                             self.optimizer.zero_grad()
-                            cur_loss.backward(retain_graph=False)
+                            cur_loss.backward(retain_graph=True)
                             self.optimizer.step()
 
                         self.iteration_count += 1
