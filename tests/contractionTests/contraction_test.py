@@ -1,9 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
 import numpy as np
-from example_sim_1 import ExampleSim
-from example_sim_2 import ExampleReLUSim
-from example_sim_3 import ExampleSimTwoP
 from itertools import product
 
 
@@ -39,8 +36,6 @@ def contraction(reference_signal, agent_probs, sim_class, it=100, make_plots=Fal
     combinations = list(product(*agent_probs))
     sim = [sim_class(reference_signal) for _ in range(len(combinations))]
 
-    print(f"{combinations} {len(combinations)}\n")
-
     for i in range(len(combinations)):
         for j in range(p_num):
             p_name = "P" + str(j + 1)
@@ -59,7 +54,6 @@ def contraction(reference_signal, agent_probs, sim_class, it=100, make_plots=Fal
     max_g = np.max(np.abs(g_history), axis=1)
 
     if make_plots:
-        sim_class(reference_signal).plot.render_graph()
         draw_plots(combinations, history, g_history)
 
     r_factor = np.sum(max_g * (1 / len(combinations)))
@@ -67,6 +61,9 @@ def contraction(reference_signal, agent_probs, sim_class, it=100, make_plots=Fal
 
 
 if __name__ == '__main__':
+    from example_sim_1 import ExampleSim
+    from example_sim_2 import ExampleReLUSim
+    from example_sim_3 import ExampleSimTwoP
     # example_sim_1 (Default)
     # r = contraction(reference_signal=100.0, agent_probs=np.array([[0.0, 1.0]]), it=100, make_plots=True, sim_class=ExampleSim)
     # print(f"Factor = {r}")
