@@ -258,7 +258,7 @@ class ControlSystem:
         """
         self.optimizer = optimizer
 
-    def run(self, iterations, show_trace=False, show_loss=False):
+    def run(self, iterations, show_trace=False, show_loss=False, disable_tqdm=False):
         """
         Run the control system for a specified number of iterations.
 
@@ -270,6 +270,9 @@ class ControlSystem:
 
         :param show_loss: Whether to display the loss during execution.
         :type show_loss: Boolean, optional, default=False
+
+        :param disable_tqdm: Whether to disable the tqdm progress bar during execution.
+        :type disable_tqdm: Boolean, optional, default=False
 
         :return: None
         """
@@ -287,7 +290,7 @@ class ControlSystem:
             queue = deque([self.startNode])
             visited = set()
 
-            with tqdm(total=iterations, desc="Running Control System") as pbar:
+            with tqdm(total=iterations, desc="Running Control System", disable=disable_tqdm) as pbar:
                 while self.iteration_count < iterations:
                     node = queue.popleft()
                     if node in visited:

@@ -6,7 +6,7 @@ from itertools import product
 
 def run_sim(sim_class, reference_signal, it=100):
     sim = sim_class(reference_signal)
-    sim.system.run(it, show_trace=False, show_loss=False)
+    sim.system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
     sim.plot.node_outputs(sim.system.get_node("A1"))
 
 
@@ -40,7 +40,7 @@ def contraction(reference_signal, agent_probs, sim_class, it=100, make_plots=Fal
         for j in range(p_num):
             p_name = "P" + str(j + 1)
             sim[i].system.get_node(p_name).logic.set_probability(combinations[i][j])
-            sim[i].system.run(it, show_trace=False, show_loss=False)
+            sim[i].system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
 
     history = [sim[i].system.get_node("A1").history for i in range(len(combinations))]
 
