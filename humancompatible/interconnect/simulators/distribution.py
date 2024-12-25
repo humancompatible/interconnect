@@ -4,7 +4,15 @@ from scipy.stats import norm
 
 
 class Distribution:
+    """
+    Class to generate distributions of the output of a simulator
+    """
     def __init__(self, sim_class, iterations=100, samples=100):
+        """
+        :param sim_class: simulator class
+        :param iterations: number of iterations to run the simulator
+        :param samples: number of samples to generate
+        """
         self.sim_class = sim_class
         self.iterations = iterations
         self.samples = samples
@@ -28,16 +36,51 @@ class Distribution:
         p = (1 / n) * np.sum(kernel(x - x_trn), axis=1)
         return p
 
-    def plot_kernel_density_estimation(self, x, y, hist, bins, h, ref_sig):
-        centers = (bins[:-1] + bins[1:]) / 2
-        width = bins[:-1] - bins[1:]
-        # plt.bar(centers, hist, width=width, edgecolor='k')
+    def plot_kernel_density_estimation(self, x, y, hist, bins, h, ref_sig, show_hist=False):
+        """
+        Plots the kernel density estimation of the given data.
+        
+        :param x: x-axis values.
+        :type x: np.array
+        :param y: y-axis values.
+        :type y: np.array
+        :param hist: Histogram values.
+        :type hist: np.array
+        :param bins: Bin values.
+        :type bins: np.array
+        :param h: Bandwidth of the kernel.
+        :type h: float
+        :param ref_sig: Reference signal.
+        :type ref_sig: float
+        :param show_hist: Flag to show histogram. Default is False.
+        :type show_hist: bool
+
+        :return: None
+        """
+
+        if show_hist:
+            centers = (bins[:-1] + bins[1:]) / 2
+            width = bins[:-1] - bins[1:]
+            plt.bar(centers, hist, width=width, edgecolor='k')
         plt.plot(x.T, y.T, linewidth=2, label=f"reference signal = {ref_sig}")
         plt.title('h = {:.2f}'.format(h))
         plt.legend()
 
-    def get_distribution(self, h, reference_signals):
-        plt.figure(figsize=(6, 4))
+    def get_distributions(self, h, reference_signals):
+        """
+        Estimate distributions for each reference signal using kernel density estimation.
+        This method generates output signals, computes their kernel density distribution,
+        and plots the kernel density estimation for each reference signal.
+
+        :param h: Bandwidth of the kernel.
+        :type h: float
+        :param reference_signals: List of reference signals.
+        :type reference_signals: np.array
+
+        :return: Estimated distributions for each reference signal.
+        :rtype: np.array
+        """
+        plt.figure(figsize=(8, 6))
         x_range = np.arange(-10.0, 10.0, 0.1)
         distributions = np.zeros((reference_signals.shape[0], x_range.shape[0]))
         rn = 0
@@ -47,7 +90,7 @@ class Distribution:
             y = self.kernel_density_distribution(x_range, x, h)
             hist, bins = np.histogram(x, 20, density=True)
             # plots of the estimates
-            self.plot_kernel_density_estimation(x_range, y, hist, bins, h, ref_sig)
+            self.plot_kernel_density_estimation(x_range, y, hist, bins, h, ref_sig, show_hist=False)
             distributions[rn] = y
             rn += 1
         return distributions

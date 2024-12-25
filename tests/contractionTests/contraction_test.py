@@ -4,12 +4,6 @@ import numpy as np
 from itertools import product
 
 
-def run_sim(sim_class, reference_signal, it=100):
-    sim = sim_class(reference_signal)
-    sim.system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
-    sim.plot.node_outputs(sim.system.get_node("A1"))
-
-
 def draw_plots(ref_sig, combinations, history, g_history, ax1, ax2):
     # plot node histories
     for i in range(len(history)):
@@ -59,6 +53,24 @@ def contraction_single(reference_signal, agent_probs, sim_class, it=100, make_pl
 
 
 def get_factor(reference_signals, agent_probs, sim_class, it=100, make_plots=False):
+    """
+    Computes the contraction factor for a set of reference signals and agent probabilities.
+
+    :param reference_signals: List of reference signals.
+    :type reference_signals: np.array
+    :param agent_probs: Array of agent probabilities.
+    :type agent_probs: np.array
+    :param sim_class: The simulator class to be used.
+    :type sim_class: class
+    :param it: Number of iterations to run the simulator. Default is 100.
+    :type it: int
+    :param make_plots: Flag to indicate whether to generate plots. Default is False.
+    :type make_plots: bool
+
+    :return: The maximum contraction factor.
+    :rtype: float
+    """
+    
     res = -np.inf
     fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
     for ref_sig in reference_signals:
