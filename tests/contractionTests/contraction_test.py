@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 
+from humancompatible.interconnect.simulators.distribution import Distribution
+
 
 def draw_plots(ref_sig, combinations, history, g_history, ax1, ax2):
     # plot node histories
@@ -94,6 +96,9 @@ if __name__ == '__main__':
     # run_sim(sim_class=ExampleReLUSim, reference_signal=100.0, it=300)
 
     # example_sim_3 (2 populations)
-    r = get_factor(reference_signals=np.array([300.0, 100.0]), agent_probs=np.array([[0.0, 1.0], [0.0, 1.0]]), it=100, make_plots=True, sim_class=ExampleSimTwoP)
-    print(f"Factor = {r}")
+    # r = get_factor(reference_signals=np.array([300.0, 100.0]), agent_probs=np.array([[0.0, 1.0], [0.0, 1.0]]), it=100, make_plots=True, sim_class=ExampleSimTwoP)
+    # print(f"Factor = {r}")
     # run_sim(sim_class=ExampleSimTwoP, reference_signal=100.0, it=600)
+
+    dist = Distribution(ExampleSimTwoP, iterations=100)
+    distributions = dist.get_distributions(h=1.0, reference_signals=np.array([100.0, 115.0, 130.0]), x_min=-50.0, x_max=50.0)

@@ -66,7 +66,7 @@ class Distribution:
         plt.title('h = {:.2f}'.format(h))
         plt.legend()
 
-    def get_distributions(self, h, reference_signals):
+    def get_distributions(self, h, reference_signals, x_min, x_max, bins):
         """
         Estimate distributions for each reference signal using kernel density estimation.
         This method generates output signals, computes their kernel density distribution,
@@ -76,21 +76,29 @@ class Distribution:
         :type h: float
         :param reference_signals: List of reference signals.
         :type reference_signals: np.array
+        :param x_min: Minimum x-axis.
+        :type x_min: float
+        :param x_max: Maximum x-axis.
+        :type x_max: float
+        :param bins: Number of bins.
+        :type bins: integer
 
         :return: Estimated distributions for each reference signal.
         :rtype: np.array
         """
         plt.figure(figsize=(8, 6))
-        x_range = np.arange(-10.0, 10.0, 0.1)
+        x_range = np.arange(x_min, x_max, 0.1)
         distributions = np.zeros((reference_signals.shape[0], x_range.shape[0]))
         rn = 0
         for ref_sig in reference_signals:
             self.reference_signal = ref_sig
             x = self.generate_outputs()
             y = self.kernel_density_distribution(x_range, x, h)
-            hist, bins = np.histogram(x, 20, density=True)
+            hist, bins = np.histogram(x, bins=bins, range=(x_min, x_max), density=True)
             # plots of the estimates
+            print(f"reference signal: {ref_sig}")
             self.plot_kernel_density_estimation(x_range, y, hist, bins, h, ref_sig, show_hist=False)
             distributions[rn] = y
             rn += 1
+        plt.show()
         return distributions
