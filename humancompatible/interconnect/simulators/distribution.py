@@ -96,7 +96,7 @@ class Distribution:
             y = self.kernel_density_distribution(x_range, x, h)
             hist, bins = np.histogram(x, bins=bins, range=(x_min, x_max), density=True)
             # plots of the estimates
-            print(f"reference signal: {ref_sig}")
+            # print(f"reference signal: {ref_sig}")
             self.plot_kernel_density_estimation(x_range, y, hist, bins, h, ref_sig, show_hist=False)
             distributions[rn] = y
             rn += 1
