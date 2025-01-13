@@ -2,19 +2,17 @@ import torch
 
 
 class AgentLogic:
-    def __init__(self, s_const1=1.0, s_const2=0.0):
+    def __init__(self):
         self.tensors = {"x": torch.tensor([0.0], requires_grad=True),
-                        "s_const1": torch.tensor([s_const1], requires_grad=True, dtype=torch.float),
-                        "s_const2": torch.tensor([s_const2], requires_grad=True, dtype=torch.float)}
-        self.variables = ["x"]
+                        "pi": torch.tensor([0.0], requires_grad=True)}
+        self.variables = ["p"]
+        self.probability = 0.5
 
-    def _sigmoid(self, x):
-        return self.tensors["s_const1"] / (1 + torch.exp(-x + self.tensors["s_const2"]))
+    def set_probability(self, prob):
+        self.probability = prob
 
     def forward(self, values, number_of_agents):
-        self.tensors["x"] = values["x"]
-
-        random_numbers = torch.zeros(number_of_agents) + self.tensors["x"]
-        result = self._sigmoid(random_numbers)
-
+        self.tensors["p"] = values["p"]
+        f1_part = torch.bernoulli(torch.ones(1, 1) * self.probability) * 0.6
+        result = f1_part * self.tensors["p"] + (1 - f1_part) * (self.tensors["p"] - 10.0)
         return result
