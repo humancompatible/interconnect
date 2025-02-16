@@ -86,8 +86,9 @@ if __name__ == '__main__':
     from example_sim_2 import ExampleReLUSim
     from example_sim_3 import ExampleSimTwoP
     # example_sim_1 (Default)
-    # r = contraction(reference_signal=100.0, agent_probs=np.array([[0.0, 1.0]]), it=100, make_plots=True, sim_class=ExampleSim)
-    # print(f"Factor = {r}")
+    eps = 0.01
+    r = get_factor(reference_signals=np.array([100.0, 300.0]), agent_probs=np.array([[eps, 1-eps]]), it=100, make_plots=True, sim_class=ExampleSim)
+    print(f"Factor = {r}")
     # run_sim(sim_class=ExampleSim, reference_signal=100.0, it=300)
 
     # example_sim_2 (ReLU controller)

@@ -6,9 +6,11 @@ class ReLUControllerLogic(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
-            nn.Linear(in_features=1, out_features=4),
+            nn.Linear(in_features=1, out_features=16),
             nn.ReLU(),
-            nn.Linear(in_features=4, out_features=4),
+            nn.Linear(in_features=16, out_features=8),
+            nn.ReLU(),
+            nn.Linear(in_features=8, out_features=4),
             nn.ReLU(),
             nn.Linear(in_features=4, out_features=1),
         )
