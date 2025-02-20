@@ -29,9 +29,9 @@ Controller
    :show-inheritance:
    :special-members: __init__
 
-Filterer
+Filter
 ------------------------------------------------------------
-.. automodule:: humancompatible.interconnect.simulators.nodes.filterer
+.. automodule:: humancompatible.interconnect.simulators.nodes.filter
    :members:
    :undoc-members:
    :show-inheritance:

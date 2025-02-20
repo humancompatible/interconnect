@@ -6,7 +6,7 @@ from humancompatible.interconnect.simulators.nodes.aggregator import Aggregator
 from humancompatible.interconnect.simulators.nodes.controller import Controller
 from humancompatible.interconnect.simulators.nodes.population import Population
 from humancompatible.interconnect.simulators.nodes.delay import Delay
-from humancompatible.interconnect.simulators.nodes.filterer import Filterer
+from humancompatible.interconnect.simulators.nodes.filter import Filter
 from humancompatible.interconnect.simulators.simulation import Simulation
 
 
@@ -72,7 +72,7 @@ class ExampleSim(Simulation):
             # result = f1_part * self.tensors["p"]
             return result
 
-    class FiltererLogic:
+    class FilterLogic:
         def __init__(self):
             self.tensors = {"S": torch.tensor([0.0], requires_grad=True),
                             "K": torch.tensor([3.0], requires_grad=True)}
@@ -95,7 +95,7 @@ class ExampleSim(Simulation):
         cont = Controller(name="C", logic=self.PiControllerLogic(kp=0.3, ki=0.5))
         pop1 = Population(name="P1", logic=self.AgentLogic(), number_of_agents=2000)
         delay = Delay(name="Z", time=1)
-        fil = Filterer(name="F", logic=self.FiltererLogic())
+        fil = Filter(name="F", logic=self.FilterLogic())
 
         # build system
         self.system.add_nodes([refsig, agg1, agg2, cont, pop1, delay, fil])

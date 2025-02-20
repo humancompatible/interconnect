@@ -12,7 +12,7 @@ class PiControllerLogic:
         self.variables = ["e"]
 
     def forward(self, values):
-        # controller accepts error (agg1_output = refsig + (-filterer))
+        # controller accepts error (agg1_output = refsig + (-filter))
         self.tensors["e"] = values["e"]
         # Compute the output based on input values
         result = (self.tensors["pi_prev"] + self.tensors["kappa"] * (
