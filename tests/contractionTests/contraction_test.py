@@ -74,10 +74,13 @@ def get_factor(reference_signals, agent_probs, sim_class, it=100, make_plots=Fal
     """
     
     res = -np.inf
-    fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
+    fig, ax1, ax2 = None, None, None
+    if make_plots:
+        fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
     for ref_sig in reference_signals:
         res = np.maximum(res, contraction_single(ref_sig, agent_probs, sim_class, it=it, make_plots=make_plots, ax1=ax1, ax2=ax2))
-    plt.show()
+    if make_plots:
+        plt.show()
     return res
 
 
