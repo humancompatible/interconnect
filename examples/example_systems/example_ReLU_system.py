@@ -11,6 +11,7 @@ from humancompatible.interconnect.simulators.simulation import Simulation
 
 from humancompatible.interconnect.simulators.logic.delays.exponentialSmoothingDelay import ESDelayLogic
 from humancompatible.interconnect.simulators.logic.controllers.ReLU_controller import ReLUControllerLogic
+from humancompatible.interconnect.simulators.logic.agents.set_probability_agent import AgentLogic
 
 
 class ExampleReLUSim(Simulation):
@@ -37,24 +38,6 @@ class ExampleReLUSim(Simulation):
             self.tensors = tensors
             return torch.sum(torch.stack([torch.sum(t) for t in self.tensors])).unsqueeze(dim=0)
 
-    class AgentLogic:
-        def __init__(self, offset=0.3):
-            self.tensors = {"x": torch.tensor([0.0], requires_grad=True),
-                            "pi": torch.tensor([0.0], requires_grad=True)}
-            self.variables = ["pi"]
-            self.probability = 0.5
-            self.offset = offset
-
-        def set_probability(self, probability):
-            self.probability = probability
-
-        def forward(self, values, number_of_agents):
-            self.tensors["pi"] = values["pi"]
-            f1_part = torch.sum(torch.bernoulli(torch.ones(number_of_agents) * self.probability))
-            f2_part = number_of_agents - f1_part
-            result = f1_part * self.tensors["pi"] + f2_part * (self.tensors["pi"] * 5 - self.offset)
-            return result
-
     class FilterLogic:
         def __init__(self):
             self.tensors = {"S": torch.tensor([0.0], requires_grad=True),
@@ -74,8 +57,8 @@ class ExampleReLUSim(Simulation):
         agg1 = Aggregator(name="A1", logic=self.AggregatorLogic1())  # Error detector
         agg2 = Aggregator(name="A2", logic=self.AggregatorLogic2())  # Sums population outputs
         cont = Controller(name="C", logic=ReLUControllerLogic())
-        pop1 = Population(name="P1", logic=self.AgentLogic(), number_of_agents=20)
-        pop2 = Population(name="P2", logic=self.AgentLogic(offset=0.4), number_of_agents=20)
+        pop1 = Population(name="P1", logic=AgentLogic(), number_of_agents=20)
+        pop2 = Population(name="P2", logic=AgentLogic(offset=0.4), number_of_agents=20)
         delay = Delay(name="Z", logic=ESDelayLogic())
         fil = Filter(name="F", logic=self.FilterLogic())
         self.system.add_nodes([refsig, agg1, agg2, cont, pop1, pop2, delay, fil])
