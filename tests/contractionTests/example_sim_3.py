@@ -6,7 +6,7 @@ from humancompatible.interconnect.simulators.nodes.aggregator import Aggregator
 from humancompatible.interconnect.simulators.nodes.controller import Controller
 from humancompatible.interconnect.simulators.nodes.population import Population
 from humancompatible.interconnect.simulators.nodes.delay import Delay
-from humancompatible.interconnect.simulators.nodes.filterer import Filterer
+from humancompatible.interconnect.simulators.nodes.filter import Filter
 from humancompatible.interconnect.simulators.simulation import Simulation
 
 
@@ -70,7 +70,7 @@ class ExampleSimTwoP(Simulation):
             # result = f1_part * self.tensors["p"]
             return result
 
-    class FiltererLogic1:
+    class FilterLogic1:
         def __init__(self):
             self.tensors = {"S": torch.tensor([0.0], requires_grad=True),
                             "K": torch.tensor([3.0], requires_grad=True)}
@@ -83,7 +83,7 @@ class ExampleSimTwoP(Simulation):
             self.result = result
             return result
 
-    class FiltererLogic2:
+    class FilterLogic2:
         def __init__(self):
             self.tensors = {"S": torch.tensor([0.0], requires_grad=True),
                             "K": torch.tensor([3.0], requires_grad=True)}
@@ -106,12 +106,12 @@ class ExampleSimTwoP(Simulation):
         pop1 = Population(name="P1", logic=self.AgentLogic(), number_of_agents=2000)
         agg2 = Aggregator(name="A2", logic=self.AggregatorLogic2())
         delay1 = Delay(name="Z1", time=1)
-        fil1 = Filterer(name="F1", logic=self.FiltererLogic1())
+        fil1 = Filter(name="F1", logic=self.FilterLogic1())
         cont2 = Controller(name="C2", logic=self.PiControllerLogic(kp=0.3, ki=0.4))
         pop2 = Population(name="P2", logic=self.AgentLogic(), number_of_agents=2000)
         agg3 = Aggregator(name="A3", logic=self.AggregatorLogic2())
         delay2 = Delay(name="Z2", time=1)
-        fil2 = Filterer(name="F", logic=self.FiltererLogic2())
+        fil2 = Filter(name="F", logic=self.FilterLogic2())
 
         # build system
         self.system.add_nodes(

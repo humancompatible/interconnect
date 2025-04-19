@@ -25,7 +25,7 @@ class ControlSystem:
         Add a node to the control system.
 
         :param node: The node to add to the control system.
-        :type node: Node object (e.g. Controller, Filterer, Population), required
+        :type node: Node object (e.g. Controller, Filter, Population), required
 
         :return: None
         """
@@ -36,7 +36,7 @@ class ControlSystem:
         Add multiple nodes to the control system.
 
         :param nodes: A list of nodes to add to the control system.
-        :type nodes: List of Node objects (e.g. Controller, Filterer, Population), required
+        :type nodes: List of Node objects (e.g. Controller, Filter, Population), required
 
         :return: None
         """
@@ -47,7 +47,7 @@ class ControlSystem:
         Remove a node from the control system.
 
         :param node: The node to remove from the control system.
-        :type node: Node object (e.g. Controller, Filterer, Population), required
+        :type node: Node object (e.g. Controller, Filter, Population), required
 
         :raises ValueError: If the node is not in the list of nodes.
 
@@ -63,7 +63,7 @@ class ControlSystem:
         Remove multiple nodes from the control system.
 
         :param nodes: A list of nodes to remove from the control system.
-        :type nodes: List of Node objects (e.g. Controller, Filterer, Population), required
+        :type nodes: List of Node objects (e.g. Controller, Filter, Population), required
 
         :raises ValueError: If a node is not in the list of nodes.
 
@@ -79,10 +79,10 @@ class ControlSystem:
         Connect two nodes in the control system.
 
         :param node1: The first node, that will send signals to the second node.
-        :type node1: Node object (e.g. Controller, Filterer, Population), required
+        :type node1: Node object (e.g. Controller, Filter, Population), required
 
         :param node2: The second node, that will receive signals from the first node.
-        :type node2: Node object (e.g. Controller, Filterer, Population), required
+        :type node2: Node object (e.g. Controller, Filter, Population), required
 
         :raises ValueError: If either node is not in the list of nodes.
 
@@ -138,7 +138,7 @@ class ControlSystem:
                 node_names.append(node.name)
 
                 # Check for valid node types
-                if node.type not in ["Controller", "Filterer", "Population", "Aggregator", "ReferenceSignal", "Delay"]:
+                if node.type not in ["Controller", "Filter", "Population", "Aggregator", "ReferenceSignal", "Delay"]:
                     errors.append(f"Invalid node type for node {node.name}: {node.type}")
 
                 # Check for many-to-one connections for non-Aggregator nodes
@@ -198,7 +198,7 @@ class ControlSystem:
         Set the start node for the control system.
 
         :param node: The node to set as the start node.
-        :type node: Node object (e.g. Controller, Filterer, Population), required
+        :type node: Node object (e.g. Controller, Filter, Population), required
 
         :raises ValueError: If the node is not in the list of nodes.
 
@@ -215,7 +215,7 @@ class ControlSystem:
         Set the checkpoint node for the control system.
 
         :param node: The node to set as the checkpoint node.
-        :type node: Node object (e.g. Controller, Filterer, Population), required
+        :type node: Node object (e.g. Controller, Filter, Population), required
 
         :raises ValueError: If the node is not in the list of nodes.
 

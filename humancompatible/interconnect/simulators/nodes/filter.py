@@ -1,15 +1,15 @@
 from humancompatible.interconnect.simulators.nodes.base_node import Node
 
 
-class Filterer(Node):
+class Filter(Node):
     """
-    A filterer node that applies a mathematical transformation to input signals.
+    A filter node that applies a mathematical transformation to input signals.
 
-    The Filterer class represents a node that takes an input signal and applies a
+    The Filter class represents a node that takes an input signal and applies a
     mathematical transformation defined by the provided logic. It evaluates a symbolic
     expression with the input values and returns the result.
 
-    To create a new logic class for use with the `Filterer` class, follow these guidelines:
+    To create a new logic class for use with the `Filter` class, follow these guidelines:
 
     Requirements
     ------------
@@ -24,7 +24,7 @@ class Filterer(Node):
     ---------------
     .. code-block:: python
 
-        class YourFiltererLogic:
+        class YourFilterLogic:
             def __init__(self):
                 self.tensors = {"S": torch.tensor([some_value], requires_grad=True),
                                 "K": torch.tensor([some_value], requires_grad=True),...}
@@ -41,15 +41,15 @@ class Filterer(Node):
 
     def __init__(self, name, logic):
         """
-        Initialize a new Filterer instance.
+        Initialize a new Filter instance.
 
-        :param name: The name of the filterer node.
+        :param name: The name of the filter node.
         :type name: str
-        :param logic: An instance of a logic class that defines the filterer's behavior.
+        :param logic: An instance of a logic class that defines the filter's behavior.
         :type logic: object
         """
         super().__init__(name=name)
-        self.type = "Filterer"
+        self.type = "Filter"
         self._logic_check(logic)
         self.logic = logic
 

@@ -6,7 +6,7 @@ sys.path.append(os.getcwd())
 
 import pytest
 from humancompatible.interconnect.simulators.simulation import Simulation
-from humancompatible.interconnect.simulators.nodes.filterer import Filterer
+from humancompatible.interconnect.simulators.nodes.filter import Filter
 from humancompatible.interconnect.simulators.nodes.controller import Controller
 from humancompatible.interconnect.simulators.nodes.aggregator import Aggregator
 from humancompatible.interconnect.simulators.nodes.reference import ReferenceSignal
@@ -36,7 +36,7 @@ class AgentLogic:
             ((1 + sympy.cos(sympy.pi * (self.symbols["x"] - self.symbols["endThreshold"]) / (self.symbols["startThreshold"] - self.symbols["endThreshold"]))) / 2, True)
         )
 
-class FiltererLogic:
+class FilterLogic:
     def __init__(self):
         self.symbols = {"S":sympy.Symbol("S"),
                         "K":sympy.Symbol("K")}
@@ -58,7 +58,7 @@ def test_successful_system_creation():
     
     pop = Population(name="P", logic=AgentLogic(), number_of_agents=1000000)
     
-    fil = Filterer(name="F", logic=FiltererLogic())
+    fil = Filter(name="F", logic=FilterLogic())
     
     delay = Delay(name="Z", time=1)
 
@@ -208,7 +208,7 @@ def test_no_population_node():
     
     agg1 = Aggregator(name="A1", logic=AggregatorLogic())
     cont = Controller(name="C", logic=PiControllerLogic())
-    fil = Filterer(name="F", logic=FiltererLogic())
+    fil = Filter(name="F", logic=FilterLogic())
     
     sim.system.add_nodes([ref, agg1, cont, fil])
     
