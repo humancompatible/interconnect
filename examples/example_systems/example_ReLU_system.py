@@ -76,7 +76,7 @@ class ExampleReLUSim(Simulation):
         self.system.set_checkpoint_node(agg1)
 
         # Set learning node
-        # cont.logic.load_state_dict(torch.load(ROOT_DIR + "/examples/weights_basic_RELU.pth"))
+        # cont.logic.load_state_dict(torch.load("./weights/weights_basic_RELU.pth"))
         # model = cont.logic
         # self.system.set_learning_model(model)
         # self.system.set_loss_function(nn.MSELoss())
