@@ -10,7 +10,6 @@ class ESDelayLogic:
 
     def forward(self, values):
         self.tensors["x"] = values["x"]
-        # self.tensors["s"] = self.tensors["x"] * self.alpha + self.tensors["s"] * (1.0 - self.alpha)
-        # result = self.tensors["s"]
-        # return result
-        return self.tensors["x"]
+        self.tensors["s"] = self.tensors["x"] * self.alpha + self.tensors["s"].detach() * (1.0 - self.alpha)
+        result = self.tensors["s"]
+        return result
