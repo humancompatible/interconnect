@@ -53,8 +53,8 @@ class ExampleReLUSim(Simulation):
         super().__init__()
 
         refsig = ReferenceSignal(name="r")
-        refsig.set_reference_signal(reference_signal)
-        agg1 = Aggregator(name="A1", logic=self.AggregatorLogic1())  # Error detector
+        refsig.set_reference_signal(torch.tensor(reference_signal, requires_grad=True, dtype=torch.float))
+        agg1 = Aggregator(name="A1", logic=self.AggregatorLogic1())  # Error computation
         agg2 = Aggregator(name="A2", logic=self.AggregatorLogic2())  # Sums population outputs
         cont = Controller(name="C", logic=ReLUControllerLogic())
         pop1 = Population(name="P1", logic=AgentLogic(), number_of_agents=20)

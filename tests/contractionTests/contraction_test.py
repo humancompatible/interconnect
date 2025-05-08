@@ -25,6 +25,14 @@ def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, 
     return
 
 
+def get_jacobian_norm(inp, out):
+    grad_vectors = []
+    for i in range(out.shape[0]):
+        grad_vectors.append(torch.autograd.grad(out[i], inp, retain_graph=True)[0])
+    J = torch.stack(grad_vectors, dim=0)
+    return J.norm(p=1).detach()
+
+
 def contraction_single(reference_signal, agent_probs, sim_class, inputs_node, outputs_node, it=100, make_plots=None, ax1=None, ax2=None):
     p_num = agent_probs.shape[0]
     combinations = list(product(*agent_probs))
@@ -34,15 +42,14 @@ def contraction_single(reference_signal, agent_probs, sim_class, inputs_node, ou
         for j in range(p_num):
             p_name = "P" + str(j + 1)
             sim[i].system.get_node(p_name).logic.set_probability(combinations[i][j])
-            sim[i].system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
+        sim[i].system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
 
-    # get gradients
     g_history = [np.empty(1) for _ in range(len(combinations))]
     for i in range(len(combinations)):
         inputs = sim[i].system.get_node(inputs_node).history
         outputs = sim[i].system.get_node(outputs_node).history
         n = min(len(inputs), len(outputs))
-        g_history[i] = np.array([(torch.autograd.grad(outputs[j], inputs[j], retain_graph=True)[0]).detach().numpy() for j in range(n)]).squeeze()
+        g_history[i] = np.array([(get_jacobian_norm(inputs[j], outputs[j])) for j in range(n)]).squeeze()
     max_g = np.max(np.abs(g_history), axis=1)
 
     if make_plots is not None:
@@ -53,7 +60,7 @@ def contraction_single(reference_signal, agent_probs, sim_class, inputs_node, ou
     return r_factor
 
 
-def get_factor(reference_signals, agent_probs, sim_class, inputs_node="A1", outputs_node="F", it=100, make_plots=None):
+def get_factor_from_list(reference_signals, agent_probs, sim_class, inputs_node="A1", outputs_node="F", it=100, make_plots=None):
     """
     Computes the contraction factor for a set of reference signals and agent probabilities.
 
@@ -89,14 +96,23 @@ def get_factor(reference_signals, agent_probs, sim_class, inputs_node="A1", outp
         plt.show()
     return res
 
+def get_factor_from_space(input_space, agent_probs, sim_class, inputs_node="A1", outputs_node="F", sample_paths = 1000, it=5):
+    res = torch.tensor([0.0])
+    for i in range(sample_paths):
+        ref_sig = input_space.get_random_point()
+        res = np.maximum(res, contraction_single(ref_sig, agent_probs, sim_class,
+                                                 inputs_node=inputs_node, outputs_node=outputs_node, it=it))
+    return res
+
 
 if __name__ == '__main__':
-    from example_sim_1 import ExampleSim
-    from example_sim_2 import ExampleReLUSim
-    from example_sim_3 import ExampleSimTwoP
+    from examples.example_systems.example_ReLU_system import ExampleReLUSim
+    # from example_sim_1 import ExampleSim
+    # from example_sim_2 import ExampleReLUSim
+    # from example_sim_3 import ExampleSimTwoP
     # example_sim_1 (Default)
     eps = 0.01
-    r = get_factor(reference_signals=np.array([100.0, 300.0]), agent_probs=np.array([[eps, 1-eps]]), it=100, make_plots=True, sim_class=ExampleSim)
+    r = get_factor_from_list(reference_signals=np.array([100.0, 300.0]), agent_probs=np.array([[eps, 1 - eps]]), it=100, make_plots="C", sim_class=ExampleReLUSim)
     print(f"Factor = {r}")
     # run_sim(sim_class=ExampleSim, reference_signal=100.0, it=300)
 
@@ -110,5 +126,5 @@ if __name__ == '__main__':
     # print(f"Factor = {r}")
     # run_sim(sim_class=ExampleSimTwoP, reference_signal=100.0, it=600)
 
-    dist = Distribution(ExampleSimTwoP, iterations=100)
-    distributions = dist.get_distributions(h=1.0, reference_signals=np.array([100.0, 115.0, 130.0]), x_min=-50.0, x_max=50.0)
+    # dist = Distribution(ExampleSimTwoP, iterations=100)
+    # distributions = dist.get_distributions(h=1.0, reference_signals=np.array([100.0, 115.0, 130.0]), x_min=-50.0, x_max=50.0)
