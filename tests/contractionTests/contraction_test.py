@@ -3,8 +3,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 
-from humancompatible.interconnect.simulators.distribution import Distribution
-
 
 def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node):
     # plot node histories
@@ -33,34 +31,43 @@ def get_jacobian_norm(inp, out):
     return J.norm(p=1).detach()
 
 
-def contraction_single(reference_signal, agent_probs, sim_class, inputs_node, outputs_node, it=100, make_plots=None, ax1=None, ax2=None):
-    p_num = agent_probs.shape[0]
-    combinations = list(product(*agent_probs))
+def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots, it=100):
+    simulation.system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
+
+    inputs = simulation.system.get_node(inputs_node).history
+    outputs = simulation.system.get_node(outputs_node).history
+    n = min(len(inputs), len(outputs))
+    g_history = np.array([(get_jacobian_norm(inputs[j], outputs[j])) for j in range(n)]).squeeze()
+    max_g = np.max(g_history)
+    history = None
+    if make_plots is not None:
+        history = simulation.system.get_node(make_plots).history
+    return max_g, history, g_history
+
+def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node, it=100, make_plots=None, ax1=None, ax2=None):
+    p_num = agent_probs.shape[0]  # shape = (num of populations, list of probabilities for each population)
+    combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
     sim = [sim_class(reference_signal) for _ in range(len(combinations))]
 
+    max_grads = np.empty(len(combinations))
+    history = [np.empty(1) for _ in range(len(combinations))]
+    g_history = [np.empty(1) for _ in range(len(combinations))]
+
     for i in range(len(combinations)):
+        # TODO: Check if agent_probs covers all population nodes
         for j in range(p_num):
             p_name = "P" + str(j + 1)
             sim[i].system.get_node(p_name).logic.set_probability(combinations[i][j])
-        sim[i].system.run(it, show_trace=False, show_loss=False, disable_tqdm=True)
-
-    g_history = [np.empty(1) for _ in range(len(combinations))]
-    for i in range(len(combinations)):
-        inputs = sim[i].system.get_node(inputs_node).history
-        outputs = sim[i].system.get_node(outputs_node).history
-        n = min(len(inputs), len(outputs))
-        g_history[i] = np.array([(get_jacobian_norm(inputs[j], outputs[j])) for j in range(n)]).squeeze()
-    max_g = np.max(np.abs(g_history), axis=1)
+        max_grads[i], history[i], g_history[i] = contraction_for_simulation(sim[i], inputs_node, outputs_node, make_plots, it)
 
     if make_plots is not None:
-        history = [sim[i].system.get_node(make_plots).history for i in range(len(combinations))]
         draw_plots(make_plots, reference_signal, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node)
 
-    r_factor = np.sum(max_g * (1 / len(combinations)))
+    r_factor = np.sum(max_grads * (1 / len(combinations)))
     return r_factor
 
 
-def get_factor_from_list(reference_signals, agent_probs, sim_class, inputs_node="A1", outputs_node="F", it=100, make_plots=None):
+def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, inputs_node="A1", outputs_node="F", make_plots=None):
     """
     Computes the contraction factor for a set of reference signals and agent probabilities.
 
@@ -88,10 +95,11 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, inputs_node=
     if make_plots:
         fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
     for ref_sig in reference_signals:
-        res = np.maximum(res, contraction_single(ref_sig, agent_probs, sim_class,
-                                                 inputs_node=inputs_node,
-                                                 outputs_node=outputs_node,
-                                                 it=it, make_plots=make_plots, ax1=ax1, ax2=ax2))
+        for _ in range(trials):
+            res = np.maximum(res, contraction_single_reference(ref_sig, agent_probs, sim_class,
+                                                               inputs_node=inputs_node,
+                                                               outputs_node=outputs_node,
+                                                               it=it, make_plots=make_plots, ax1=ax1, ax2=ax2))
     if make_plots:
         plt.show()
     return res
@@ -100,8 +108,8 @@ def get_factor_from_space(input_space, agent_probs, sim_class, inputs_node="A1",
     res = torch.tensor([0.0])
     for i in range(sample_paths):
         ref_sig = input_space.get_random_point()
-        res = np.maximum(res, contraction_single(ref_sig, agent_probs, sim_class,
-                                                 inputs_node=inputs_node, outputs_node=outputs_node, it=it))
+        res = np.maximum(res, contraction_single_reference(ref_sig, agent_probs, sim_class,
+                                                           inputs_node=inputs_node, outputs_node=outputs_node, it=it))
     return res
 
 
@@ -111,9 +119,14 @@ if __name__ == '__main__':
     # from example_sim_2 import ExampleReLUSim
     # from example_sim_3 import ExampleSimTwoP
     # example_sim_1 (Default)
-    eps = 0.01
-    r = get_factor_from_list(reference_signals=np.array([100.0, 300.0]), agent_probs=np.array([[eps, 1 - eps]]), it=100, make_plots="C", sim_class=ExampleReLUSim)
-    print(f"Factor = {r}")
+    eps = 0.05
+    approximated_lipschitz = get_factor_from_list(reference_signals=np.array([8]),
+                                                  agent_probs=np.array([[eps, 1.0-eps], [eps, 1.0-eps]]),
+                                                  sim_class=ExampleReLUSim,
+                                                  it=500,
+                                                  trials=2,
+                                                  make_plots="A1")
+    print(f"Factor = {approximated_lipschitz}")
     # run_sim(sim_class=ExampleSim, reference_signal=100.0, it=300)
 
     # example_sim_2 (ReLU controller)
