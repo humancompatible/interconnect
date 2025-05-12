@@ -3,6 +3,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 from itertools import product
 
+from humancompatible.interconnect.simulators.distribution import *
+
 
 def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node):
     # plot node histories
@@ -12,6 +14,7 @@ def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, 
     ax1.legend()
     ax1.set_xlabel("Time Step")
     ax1.set_ylabel("Value")
+    ax1.grid(True)
 
     # plot gradient histories
     for i in range(len(combinations)):
@@ -20,6 +23,7 @@ def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, 
     ax2.legend()
     ax2.set_xlabel("Time Step")
     ax2.set_ylabel("Gradient Value")
+    ax2.grid(True)
     return
 
 
@@ -44,6 +48,7 @@ def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots
         history = simulation.system.get_node(make_plots).history
     return max_g, history, g_history
 
+
 def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node, it=100, make_plots=None, ax1=None, ax2=None):
     p_num = agent_probs.shape[0]  # shape = (num of populations, list of probabilities for each population)
     combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
@@ -64,7 +69,7 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
         draw_plots(make_plots, reference_signal, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node)
 
     r_factor = np.sum(max_grads * (1 / len(combinations)))
-    return r_factor
+    return r_factor, history
 
 
 def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, inputs_node="A1", outputs_node="F", make_plots=None):
@@ -89,19 +94,31 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, 
     :return: The maximum contraction factor.
     :rtype: float
     """
-    
-    res = -np.inf
+
     fig, ax1, ax2 = None, None, None
     if make_plots:
         fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
-    for ref_sig in reference_signals:
-        for _ in range(trials):
-            res = np.maximum(res, contraction_single_reference(ref_sig, agent_probs, sim_class,
-                                                               inputs_node=inputs_node,
-                                                               outputs_node=outputs_node,
-                                                               it=it, make_plots=make_plots, ax1=ax1, ax2=ax2))
+    res = np.empty(reference_signals.shape[0])
+    end_outputs = np.empty((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
+    for i in range(len(reference_signals)):
+        ref_sig = reference_signals[i]
+        for j in range(trials):
+            res[i], temp = contraction_single_reference(ref_sig, agent_probs, sim_class,
+                                                        inputs_node=inputs_node, outputs_node=outputs_node,
+                                                        it=it, make_plots=make_plots, ax1=ax1, ax2=ax2)
+            if make_plots is not None:
+                for k in range(len(temp)):
+                    end_outputs[i][k][j] = temp[k][-1]
+
     if make_plots:
         plt.show()
+    # TODO: 1) Plot all reference signals on the same figure
+    # TODO: 2) Add probabilities to labels
+    # TODO: 3) Plot distributions in a more compact way
+    if make_plots is not None:
+        for i in range(len(reference_signals)):
+            _ = get_distributions(x=end_outputs[i], h=1.9, labels=[f"reference_signal={reference_signals[i]}"]*4,
+                                  bins_n=100, step=0.1, show_histograms=True)
     return res
 
 def get_factor_from_space(input_space, agent_probs, sim_class, inputs_node="A1", outputs_node="F", sample_paths = 1000, it=5):
