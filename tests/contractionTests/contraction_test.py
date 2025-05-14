@@ -11,7 +11,7 @@ def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, 
     for i in range(len(history)):
         ax1.plot([h.detach().numpy() for h in history[i]], label=f"Sim: reference signal = {ref_sig}; p = {combinations[i]}")
     ax1.set_title(f"Node {make_plots} output values")
-    ax1.legend()
+    # ax1.legend()
     ax1.set_xlabel("Time Step")
     ax1.set_ylabel("Value")
     ax1.grid(True)
@@ -20,7 +20,7 @@ def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, 
     for i in range(len(combinations)):
         ax2.plot(g_history[i], label=f"Grads in Sim: reference signal = {ref_sig}; p = {combinations[i]}")
     ax2.set_title(f"Gradients ({inputs_node} - {outputs_node})")
-    ax2.legend()
+    # ax2.legend()
     ax2.set_xlabel("Time Step")
     ax2.set_ylabel("Gradient Value")
     ax2.grid(True)
@@ -72,7 +72,10 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
     return r_factor, history
 
 
-def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, inputs_node="A1", outputs_node="F", make_plots=None):
+def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, inputs_node="A1", outputs_node="F",
+                         node_outputs_plot=None,
+                         show_distributions_plot=True,
+                         show_distributions_histograms_plot=True):
     """
     Computes the contraction factor for a set of reference signals and agent probabilities.
 
@@ -88,16 +91,18 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, 
     :type outputs_node: str
     :param it: Number of iterations to run the simulator. Default is 100.
     :type it: int
-    :param make_plots: Flag to indicate whether to generate plots. Default is False.
-    :type make_plots: str
+    :param show_node_outputs_plot: Flag to indicate whether to generate plots. Default is False.
+    :type show_node_outputs_plot: str
 
     :return: The maximum contraction factor.
     :rtype: float
     """
 
-    fig, ax1, ax2 = None, None, None
-    if make_plots:
-        fig, (ax1, ax2) = plt.subplots(2, constrained_layout=True, figsize=(10, 8))
+    fig, ax = None, [None] * 4
+    if node_outputs_plot:
+        fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 9))
+        ax = ax.flatten()
+        ax[3].axis('off')
     res = np.empty(reference_signals.shape[0])
     end_outputs = np.empty((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
     for i in range(len(reference_signals)):
@@ -105,20 +110,22 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, 
         for j in range(trials):
             res[i], temp = contraction_single_reference(ref_sig, agent_probs, sim_class,
                                                         inputs_node=inputs_node, outputs_node=outputs_node,
-                                                        it=it, make_plots=make_plots, ax1=ax1, ax2=ax2)
-            if make_plots is not None:
+                                                        it=it, make_plots=node_outputs_plot, ax1=ax[0], ax2=ax[2])
+            if node_outputs_plot is not None:
                 for k in range(len(temp)):
                     end_outputs[i][k][j] = temp[k][-1]
 
-    if make_plots:
-        plt.show()
-    # TODO: 1) Plot all reference signals on the same figure
-    # TODO: 2) Add probabilities to labels
-    # TODO: 3) Plot distributions in a more compact way
-    if make_plots is not None:
+    combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
+    if node_outputs_plot is not None:
         for i in range(len(reference_signals)):
-            _ = get_distributions(x=end_outputs[i], h=1.9, labels=[f"reference_signal={reference_signals[i]}"]*4,
-                                  bins_n=100, step=0.1, show_histograms=True)
+            labels = [(f"Reference signal={reference_signals[i]}; "
+                       f"Population Probabilities = {combinations[j]}") for j in range(len(combinations))]
+            _ = get_distributions(x=end_outputs[i], h=1.9, labels=labels, bins_n=100, step=0.1,
+                                  show_plots=show_distributions_plot,
+                                  show_histograms=show_distributions_histograms_plot,
+                                  fig=fig, ax=ax[1], node=node_outputs_plot)
+    if node_outputs_plot:
+        plt.show()
     return res
 
 def get_factor_from_space(input_space, agent_probs, sim_class, inputs_node="A1", outputs_node="F", sample_paths = 1000, it=5):
@@ -137,12 +144,13 @@ if __name__ == '__main__':
     # from example_sim_3 import ExampleSimTwoP
     # example_sim_1 (Default)
     eps = 0.05
-    approximated_lipschitz = get_factor_from_list(reference_signals=np.array([8]),
+    approximated_lipschitz = get_factor_from_list(reference_signals=np.array([8.0]),
                                                   agent_probs=np.array([[eps, 1.0-eps], [eps, 1.0-eps]]),
                                                   sim_class=ExampleReLUSim,
                                                   it=500,
-                                                  trials=2,
-                                                  make_plots="A1")
+                                                  trials=5,
+                                                  node_outputs_plot="A1", show_distributions_plot=True,
+                                                  show_distributions_histograms_plot=True)
     print(f"Factor = {approximated_lipschitz}")
     # run_sim(sim_class=ExampleSim, reference_signal=100.0, it=300)
 

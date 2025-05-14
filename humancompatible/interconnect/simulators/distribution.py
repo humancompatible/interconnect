@@ -3,17 +3,21 @@ from matplotlib import pyplot as plt
 from scipy.stats import norm
 
 
-def get_system_output(sim_class, reference_signal, iterations):
+def get_system_output(sim_class, reference_signal, iterations, node=None):
     sim = sim_class(reference_signal)
     sim.system.run(iterations, show_trace=False, disable_tqdm=True)
-    output = sim.system.checkpointNode.outputValue.item()
+    output = None
+    if node is None:
+        output = sim.system.checkpointNode.outputValue.item()
+    else:
+        output = sim.system.get_node(node).outputValue.item()
     return output
 
 
-def generate_outputs(sim_class, reference_signals, iterations, samples):
+def generate_outputs(sim_class, reference_signals, iterations, samples, node=None):
     outputs = np.empty((len(reference_signals), samples))
     for i in range(len(reference_signals)):
-        outputs[i] = np.array([get_system_output(sim_class, reference_signals[i], iterations) for _ in range(samples)])
+        outputs[i] = np.array([get_system_output(sim_class, reference_signals[i], iterations, node) for _ in range(samples)])
     return outputs
 
 
@@ -27,7 +31,7 @@ def kernel_density_distribution(x, x_trn, h):
     return p
 
 
-def plot_kernel_density_estimation(x_range, x, y, h, bins_n, label="", show_histograms=False):
+def plot_kernel_density_estimation(x_range, x, y, h, bins_n, label="", node=None, show_histograms=False, fig=None, ax=None):
     """
     Plots the kernel density estimation of the given data.
         
@@ -48,19 +52,22 @@ def plot_kernel_density_estimation(x_range, x, y, h, bins_n, label="", show_hist
 
     :return: None
     """
-
+    if fig is None:
+        fig, ax = plt.subplots()
     if show_histograms:
         hist, bins = np.histogram(x, bins=bins_n, range=(min(x_range), max(x_range)), density=True)
         centers = (bins[:-1] + bins[1:]) / 2
         width = bins[:-1] - bins[1:]
-        plt.bar(centers, hist, width=width, edgecolor='k')
-    plt.plot(x_range.T, y.T, linewidth=2, label=f"{label}")
-    plt.title('h = {:.2f}'.format(h))
-    plt.grid(True)
-    plt.legend()
+        ax.barh(centers, hist, height=np.abs(width), edgecolor='k')
+    ax.plot(y.T, x_range.T, linewidth=2, label=f"{label}")
+    node_name = node+" " if node is not None else ""
+    ax.set_title(f"Estimated distributions of the output of the {node_name}node\n"
+                 f"h = {h:.2f}")
+    ax.grid(True)
+    ax.legend()
 
 
-def get_distributions(x, h, labels, bins_n, step=0.1, show_histograms=False):
+def get_distributions(x, h, labels, bins_n, step=0.1, node = None, show_plots=False, show_histograms=False, fig=None, ax=None):
     """
     Estimate distributions for each reference signal using kernel density estimation.
     This method generates output signals, computes their kernel density distribution,
@@ -72,7 +79,6 @@ def get_distributions(x, h, labels, bins_n, step=0.1, show_histograms=False):
     :return: Estimated distributions for each reference signal.
     :rtype: np.array
     """
-    plt.figure(figsize=(8, 6))
     n = x.shape[0]
     x_min = np.min(x) - 10
     x_max = np.max(x) + 10
@@ -80,8 +86,8 @@ def get_distributions(x, h, labels, bins_n, step=0.1, show_histograms=False):
     distributions = np.zeros((n, x_range.shape[0]))
     for i in range(n):
         distributions[i] = kernel_density_distribution(x_range, x[i], h)
-        plot_kernel_density_estimation(x_range=x_range, x=x[i], y=distributions[i], h=h,
-                                       bins_n=bins_n, label=f"{labels[i]}",
-                                       show_histograms=show_histograms)
-    plt.show()
+        if show_plots:
+            plot_kernel_density_estimation(x_range=x_range, x=x[i], y=distributions[i], h=h,
+                                           bins_n=bins_n, label=f"{labels[i]}", node=node,
+                                           show_histograms=show_histograms, fig=fig, ax=ax)
     return distributions
