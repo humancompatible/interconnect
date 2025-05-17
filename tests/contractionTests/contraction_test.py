@@ -117,13 +117,16 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, 
 
     combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
     if node_outputs_plot is not None:
-        for i in range(len(reference_signals)):
-            labels = [(f"Reference signal={reference_signals[i]}; "
-                       f"Population Probabilities = {combinations[j]}") for j in range(len(combinations))]
-            _ = get_distributions(x=end_outputs[i], h=1.9, labels=labels, bins_n=100, step=0.1,
-                                  show_plots=show_distributions_plot,
-                                  show_histograms=show_distributions_histograms_plot,
-                                  fig=fig, ax=ax[1], node=node_outputs_plot)
+        if show_distributions_plot:
+            for i in range(len(reference_signals)):
+                labels = [(f"Reference signal={reference_signals[i]}; "
+                           f"Population Probabilities = {combinations[j]}") for j in range(len(combinations))]
+                _ = get_distributions(x=end_outputs[i], h=1.9, labels=labels, bins_n=100, step=0.1,
+                                      show_plots=show_distributions_plot,
+                                      show_histograms=show_distributions_histograms_plot,
+                                      fig=fig, ax=ax[1], node=node_outputs_plot)
+        else:
+            ax[1].axis('off')
     if node_outputs_plot:
         plt.show()
     return res
