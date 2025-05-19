@@ -21,13 +21,17 @@ def generate_outputs(sim_class, reference_signals, iterations, samples, node=Non
     return outputs
 
 
-def kernel_density_distribution(x, x_trn, h):
-    def kernel(y):
-        return norm.pdf(y, loc=0, scale=h)
+def kernel_def(y):
+    return norm.pdf(y)
+
+
+def kernel_density_distribution(x, x_trn, h, kernel=None):
+    if kernel is None:
+        kernel = kernel_def
 
     n = x_trn.shape[0]
     x = np.reshape(x, (x.shape[0], 1))
-    p = (1 / n) * np.sum(kernel(x - x_trn), axis=1)
+    p = (1 / (n*h)) * np.sum(kernel((x - x_trn) / h), axis=1)
     return p
 
 
@@ -67,7 +71,7 @@ def plot_kernel_density_estimation(x_range, x, y, h, bins_n, label="", node=None
     ax.legend()
 
 
-def get_distributions(x, h, labels, bins_n, step=0.1, node = None, show_plots=False, show_histograms=False, fig=None, ax=None):
+def get_distributions(x, h, labels, step=0.1, kernel=None, node = None, show_plots=False, show_histograms=False, fig=None, ax=None):
     """
     Estimate distributions for each reference signal using kernel density estimation.
     This method generates output signals, computes their kernel density distribution,
@@ -85,9 +89,9 @@ def get_distributions(x, h, labels, bins_n, step=0.1, node = None, show_plots=Fa
     x_range = np.arange(x_min, x_max, step)
     distributions = np.zeros((n, x_range.shape[0]))
     for i in range(n):
-        distributions[i] = kernel_density_distribution(x_range, x[i], h)
+        distributions[i] = kernel_density_distribution(x_range, x[i], h, kernel)
         if show_plots:
             plot_kernel_density_estimation(x_range=x_range, x=x[i], y=distributions[i], h=h,
-                                           bins_n=bins_n, label=f"{labels[i]}", node=node,
+                                           bins_n=np.arange(x_min, x_max+step, step), label=f"{labels[i]}", node=node,
                                            show_histograms=show_histograms, fig=fig, ax=ax)
     return distributions
