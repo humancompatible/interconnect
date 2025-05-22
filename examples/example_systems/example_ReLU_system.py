@@ -49,7 +49,7 @@ class ExampleReLUSim(Simulation):
             result = - (self.tensors["S"]) / self.tensors["K"]
             return result
 
-    def __init__(self, reference_signal=8.0):
+    def __init__(self, reference_signal=8.0, weights=None):
         super().__init__()
 
         refsig = ReferenceSignal(name="r")
@@ -75,13 +75,13 @@ class ExampleReLUSim(Simulation):
         self.system.set_start_node(refsig)
         self.system.set_checkpoint_node(agg1)
 
-        # Set learning node
-        # cont.logic.load_state_dict(torch.load("./weights/weights_basic_RELU.pth"))
-        # model = cont.logic
-        # self.system.set_learning_model(model)
-        # self.system.set_loss_function(nn.MSELoss())
-        # optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
-        # self.system.set_optimizer(optimizer)
+        if weights is not None:
+            # Load controller logic
+            cont.logic.load_state_dict(torch.load(weights))
 
-        # Load controller logic
-        cont.logic.load_state_dict(torch.load("./weights/weights_basic_RELU.pth"))
+        # Set learning node
+        model = cont.logic
+        self.system.set_learning_model(model)
+        self.system.set_loss_function(nn.MSELoss())
+        optimizer = torch.optim.Adam(model.parameters(), lr=1e-3, weight_decay=0.5)
+        self.system.set_optimizer(optimizer)

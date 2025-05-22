@@ -49,17 +49,17 @@ def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots
     return max_g, history, g_history
 
 
-def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node, it=100, make_plots=None, ax1=None, ax2=None):
+def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node,
+                                 weights=None, it=100, make_plots=None, ax1=None, ax2=None):
     p_num = agent_probs.shape[0]  # shape = (num of populations, list of probabilities for each population)
     combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
-    sim = [sim_class(reference_signal) for _ in range(len(combinations))]
+    sim = [sim_class(reference_signal, weights) for _ in range(len(combinations))]
 
     max_grads = np.empty(len(combinations))
     history = [np.empty(1) for _ in range(len(combinations))]
     g_history = [np.empty(1) for _ in range(len(combinations))]
 
     for i in range(len(combinations)):
-        # TODO: Check if agent_probs covers all population nodes
         for j in range(p_num):
             p_name = "P" + str(j + 1)
             sim[i].system.get_node(p_name).logic.set_probability(combinations[i][j])
@@ -72,7 +72,8 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
     return r_factor, history
 
 
-def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, inputs_node="A1", outputs_node="F",
+def get_factor_from_list(reference_signals, agent_probs, sim_class,
+                         it, trials, weights=None, inputs_node="A1", outputs_node="F",
                          node_outputs_plot=None,
                          show_distributions_plot=True,
                          show_distributions_histograms_plot=True):
@@ -109,7 +110,7 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, 
         ref_sig = reference_signals[i]
         for j in range(trials):
             res[i], temp = contraction_single_reference(ref_sig, agent_probs, sim_class,
-                                                        inputs_node=inputs_node, outputs_node=outputs_node,
+                                                        inputs_node=inputs_node, outputs_node=outputs_node, weights=weights,
                                                         it=it, make_plots=node_outputs_plot, ax1=ax[0], ax2=ax[2])
             if node_outputs_plot is not None:
                 for k in range(len(temp)):
@@ -131,7 +132,9 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials, 
         plt.show()
     return res
 
-def get_factor_from_space(input_space, agent_probs, sim_class, inputs_node="A1", outputs_node="F", sample_paths = 1000, it=5):
+
+def get_factor_from_space(input_space, agent_probs, sim_class, weights=None,
+                          inputs_node="A1", outputs_node="F", sample_paths=1000, it=5):
     res = torch.tensor([0.0])
     for i in range(sample_paths):
         ref_sig = input_space.get_random_point()
