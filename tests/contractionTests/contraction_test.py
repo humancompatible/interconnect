@@ -50,7 +50,7 @@ def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots
 
 
 def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node,
-                                 weights=None, it=100, make_plots=None, ax1=None, ax2=None):
+                                 prob_weights, weights=None, it=100, make_plots=None, ax1=None, ax2=None):
     p_num = agent_probs.shape[0]  # shape = (num of populations, list of probabilities for each population)
     combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
     sim = [sim_class(reference_signal, weights) for _ in range(len(combinations))]
@@ -68,12 +68,12 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
     if make_plots is not None:
         draw_plots(make_plots, reference_signal, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node)
 
-    r_factor = np.sum(max_grads * (1 / len(combinations)))
+    r_factor = np.sum(max_grads * np.prod(np.array(list(product(*prob_weights))), axis=1))
     return r_factor, history
 
 
-def get_factor_from_list(reference_signals, agent_probs, sim_class,
-                         it, trials, weights=None, inputs_node="A1", outputs_node="F",
+def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
+                         prob_weights=None, weights=None, inputs_node="A1", outputs_node="F",
                          node_outputs_plot=None,
                          show_distributions_plot=True,
                          show_distributions_histograms_plot=True):
@@ -99,19 +99,25 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class,
     :rtype: float
     """
 
+    if prob_weights is None:
+        prob_weights = [np.array([0.5, 0.5]), np.array([0.5, 0.5])]
+
     fig, ax = None, [None] * 4
     if node_outputs_plot:
         fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 9))
         ax = ax.flatten()
         ax[3].axis('off')
-    res = np.empty(reference_signals.shape[0])
-    end_outputs = np.empty((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
+    res = np.zeros(reference_signals.shape[0])
+    end_outputs = np.zeros((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
     for i in range(len(reference_signals)):
         ref_sig = reference_signals[i]
         for j in range(trials):
-            res[i], temp = contraction_single_reference(ref_sig, agent_probs, sim_class,
-                                                        inputs_node=inputs_node, outputs_node=outputs_node, weights=weights,
-                                                        it=it, make_plots=node_outputs_plot, ax1=ax[0], ax2=ax[2])
+            temp_res, temp = contraction_single_reference(reference_signal=ref_sig, agent_probs = agent_probs,
+                                                          prob_weights=prob_weights, sim_class=sim_class,
+                                                          inputs_node=inputs_node, outputs_node=outputs_node,
+                                                          weights=weights, it=it, make_plots=node_outputs_plot,
+                                                          ax1=ax[0], ax2=ax[2])
+            res[i] = max(res[i], temp_res)
             if node_outputs_plot is not None:
                 for k in range(len(temp)):
                     end_outputs[i][k][j] = temp[k][-1]
@@ -133,12 +139,15 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class,
     return res
 
 
-def get_factor_from_space(input_space, agent_probs, sim_class, weights=None,
+def get_factor_from_space(input_space, agent_probs, sim_class, weights=None, prob_weights=None,
                           inputs_node="A1", outputs_node="F", sample_paths=1000, it=5):
+    if prob_weights is None:
+        prob_weights = [np.array([0.5, 0.5]), np.array([0.5, 0.5])]
     res = torch.tensor([0.0])
     for i in range(sample_paths):
         ref_sig = input_space.get_random_point()
-        res = np.maximum(res, contraction_single_reference(ref_sig, agent_probs, sim_class,
+        res = np.maximum(res, contraction_single_reference(reference_signal=ref_sig, agent_probs=agent_probs,
+                                                           sim_class=sim_class, prob_weights=prob_weights,
                                                            inputs_node=inputs_node, outputs_node=outputs_node, it=it))
     return res
 

@@ -3,8 +3,8 @@ from matplotlib import pyplot as plt
 from scipy.stats import norm
 
 
-def get_system_output(sim_class, reference_signal, iterations, node=None):
-    sim = sim_class(reference_signal)
+def get_system_output(sim_class, weights, reference_signal, iterations, node=None):
+    sim = sim_class(reference_signal, weights)
     sim.system.run(iterations, show_trace=False, disable_tqdm=True)
     output = None
     if node is None:
@@ -14,10 +14,10 @@ def get_system_output(sim_class, reference_signal, iterations, node=None):
     return output
 
 
-def generate_outputs(sim_class, reference_signals, iterations, samples, node=None):
+def generate_outputs(sim_class, weights, reference_signals, iterations, samples, node=None):
     outputs = np.empty((len(reference_signals), samples))
     for i in range(len(reference_signals)):
-        outputs[i] = np.array([get_system_output(sim_class, reference_signals[i], iterations, node) for _ in range(samples)])
+        outputs[i] = np.array([get_system_output(sim_class, weights, reference_signals[i], iterations, node) for _ in range(samples)])
     return outputs
 
 

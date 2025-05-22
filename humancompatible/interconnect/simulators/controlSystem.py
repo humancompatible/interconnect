@@ -2,6 +2,7 @@ from collections import deque
 import time
 import torch
 import torch.nn as nn
+import numpy as np
 from tqdm import tqdm
 from humancompatible.interconnect.simulators.utils import Utils
 
@@ -258,6 +259,14 @@ class ControlSystem:
         """
         self.optimizer = optimizer
 
+    def estimate_probabilities(self):
+        p_num = 2
+        estimated_probs = [[] for _ in range(p_num)]
+        for j in range(p_num):
+            p_name = "P" + str(j + 1)
+            estimated_probs[j] = self.get_node(p_name).logic.n / np.sum(self.get_node(p_name).logic.n)
+        return estimated_probs
+
     def train(self, destination_file, iterations=10, reruns=5, show_trace=False, show_loss=False):
         if self.learning_model is None:
             print("learning model is not set")
@@ -362,7 +371,7 @@ class ControlSystem:
             visited = set()
 
             with tqdm(total=iterations, desc="Running Control System", disable=disable_tqdm) as pbar:
-                while self.iteration_count < iterations:
+                while self.iteration_count <= iterations:
                     node = queue.popleft()
                     if node in visited:
                         continue
@@ -407,19 +416,3 @@ class ControlSystem:
         for node in self.nodes:
             node.outputValue = []
             node.history = []
-
-    def compute_lipschitz_constant(self):
-        """
-        Compute the Lipschitz constant in the control system.
-
-        :return: Lipschitz constant
-        """
-        lipschitz_const = 1.0
-        for node in self.nodes:
-            logic = node.logic
-            if logic is not None:
-                expr = logic.expression
-                expr = expr.subs(logic.constants)
-                lipschitz_const *= Utils.compute_lipschitz_constant_from_expression(expr)
-
-        return lipschitz_const
