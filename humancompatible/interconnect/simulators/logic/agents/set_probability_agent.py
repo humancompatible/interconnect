@@ -12,15 +12,12 @@ class SimpleAgentLogic:
         self.changed_probability = False
 
     def set_probability(self, probability):
-        # If we manually set probability, it means that we test system for contraction-on-average
         self.changed_probability = True
         self.probability = probability
 
     def get_probabilities(self, n):
-        # For simple agent define probability as a weighted coin flip
         res = torch.ones(n) * self.probability
         if self.changed_probability:
-            # For contraction-on-average testing, we use simplified (approximated) agent probabilities
             torch.ones(n) * self.probability
         return res
 
