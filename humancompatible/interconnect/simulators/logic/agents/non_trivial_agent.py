@@ -18,7 +18,6 @@ class NonTrivialAgentLogic:
         self.changed_probability = False
 
     def set_probability(self, probability):
-        # If we manually set probability, it means that we test system for contraction-on-average
         self.changed_probability = True
         self.probability = probability
 
@@ -29,7 +28,7 @@ class NonTrivialAgentLogic:
         w = torch.normal(0, 1, size=(n,))  # get w
         res = torch.sigmoid(self.a * (w + self.b))
         if self.changed_probability:
-            # For contraction-on-average testing, we use simplified (approximated) agent probabilities
+            # One may wish to alter probability for future analysis of stability of the system
             res = torch.ones(n) * self.probability
         return res
 

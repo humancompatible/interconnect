@@ -51,8 +51,9 @@ def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots
 
 def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node,
                                  prob_weights, weights=None, it=100, make_plots=None, ax1=None, ax2=None):
-    p_num = agent_probs.shape[0]  # shape = (num of populations, list of probabilities for each population)
-    combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
+    combinations = [1]
+    if agent_probs is not None:
+        combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
     sim = [sim_class(reference_signal, weights) for _ in range(len(combinations))]
 
     max_grads = np.empty(len(combinations))
@@ -60,9 +61,11 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
     g_history = [np.empty(1) for _ in range(len(combinations))]
 
     for i in range(len(combinations)):
-        for j in range(p_num):
-            p_name = "P" + str(j + 1)
-            sim[i].system.get_node(p_name).logic.set_probability(combinations[i][j])
+        if agent_probs is not None:
+            p_num = agent_probs.shape[0]  # shape = (num of populations, list of probabilities for each population)
+            for j in range(p_num):
+                p_name = "P" + str(j + 1)
+                sim[i].system.get_node(p_name).logic.set_probability(combinations[i][j])
         max_grads[i], history[i], g_history[i] = contraction_for_simulation(sim[i], inputs_node, outputs_node, make_plots, it)
 
     # print(np.mean(g_history, axis=1))
@@ -113,13 +116,16 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
         fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 9))
         ax = ax.flatten()
         ax[3].axis('off')
-    maximums = np.zeros((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
-    means = np.zeros((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
-    end_outputs = np.zeros((reference_signals.shape[0], len(list(product(*agent_probs))), trials))
+    len_prod = 1
+    if agent_probs is not None:
+        len_prod = len(list(product(*agent_probs)))
+    maximums = np.zeros((reference_signals.shape[0], len_prod, trials))
+    means = np.zeros((reference_signals.shape[0], len_prod, trials))
+    end_outputs = np.zeros((reference_signals.shape[0], len_prod, trials))
     for i in range(len(reference_signals)):
         ref_sig = reference_signals[i]
         for j in range(trials):
-            temp_res, temp_mean, temp_history = contraction_single_reference(reference_signal=ref_sig, agent_probs = agent_probs,
+            temp_res, temp_mean, temp_history = contraction_single_reference(reference_signal=ref_sig, agent_probs=agent_probs,
                                                           prob_weights=prob_weights, sim_class=sim_class,
                                                           inputs_node=inputs_node, outputs_node=outputs_node,
                                                           weights=weights, it=it, make_plots=node_outputs_plot,
@@ -127,15 +133,18 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
             # maximums[i] = max(maximums[i], temp_res)
             # means[i] = temp_mean
             for k in range(len(temp_history)):
-                maximums[i][k] = temp_res[k]
+                maximums[i][k] = np.maximum(maximums[i][k], temp_res[k])
                 means[i][k] = temp_mean[k]
             if node_outputs_plot is not None:
                 for k in range(len(temp_history)):
                     end_outputs[i][k][j] = temp_history[k][-1]
 
+    # print(f"maximums {maximums}")
     maximums = maximums.max(axis=2)
     means = means.mean(axis=2)
-    combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
+    combinations = ["unchanged"]
+    if agent_probs is not None:
+        combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
     if node_outputs_plot is not None:
         if show_distributions_plot:
             for i in range(len(reference_signals)):
@@ -149,7 +158,8 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
             ax[1].axis('off')
     if node_outputs_plot:
         plt.show()
-    return maximums, means
+    # return maximums, means
+    return means
 
 
 def get_factor_from_space(input_space, agent_probs, sim_class, weights=None, prob_weights=None,
@@ -163,34 +173,3 @@ def get_factor_from_space(input_space, agent_probs, sim_class, weights=None, pro
                                                            sim_class=sim_class, prob_weights=prob_weights,
                                                            inputs_node=inputs_node, outputs_node=outputs_node, it=it))
     return res
-
-
-if __name__ == '__main__':
-    from examples.example_systems.example_ReLU_system import ExampleReLUSim
-    # from example_sim_1 import ExampleSim
-    # from example_sim_2 import ExampleReLUSim
-    # from example_sim_3 import ExampleSimTwoP
-    # example_sim_1 (Default)
-    eps = 0.05
-    approximated_lipschitz = get_factor_from_list(reference_signals=np.array([8.0]),
-                                                  agent_probs=np.array([[eps, 1.0-eps], [eps, 1.0-eps]]),
-                                                  sim_class=ExampleReLUSim,
-                                                  it=500,
-                                                  trials=5,
-                                                  node_outputs_plot="A1", show_distributions_plot=True,
-                                                  show_distributions_histograms_plot=True)
-    print(f"Factor = {approximated_lipschitz}")
-    # run_sim(sim_class=ExampleSim, reference_signal=100.0, it=300)
-
-    # example_sim_2 (ReLU controller)
-    # r = contraction(reference_signal=4.0, agent_probs=[0.0, 1.0], it=100, make_plots=True, sim_class=ExampleReLUSim)
-    # print(f"Factor = {r}")
-    # run_sim(sim_class=ExampleReLUSim, reference_signal=100.0, it=300)
-
-    # example_sim_3 (2 populations)
-    # r = get_factor(reference_signals=np.array([300.0, 100.0]), agent_probs=np.array([[0.0, 1.0], [0.0, 1.0]]), it=100, make_plots=True, sim_class=ExampleSimTwoP)
-    # print(f"Factor = {r}")
-    # run_sim(sim_class=ExampleSimTwoP, reference_signal=100.0, it=600)
-
-    # dist = Distribution(ExampleSimTwoP, iterations=100)
-    # distributions = dist.get_distributions(h=1.0, reference_signals=np.array([100.0, 115.0, 130.0]), x_min=-50.0, x_max=50.0)

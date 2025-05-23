@@ -58,7 +58,7 @@ class ExampleSim(Simulation):
         agg2 = Aggregator(name="A2", logic=self.AggregatorLogic2())  # Sums population outputs
         cont = Controller(name="C", logic=ReLUControllerLogic())
         pop1 = Population(name="P1", logic=NonTrivialAgentLogic(a=5, b=0), number_of_agents=20)
-        pop2 = Population(name="P2", logic=NonTrivialAgentLogic(a=5, b=0.5, offset=-0.4), number_of_agents=20)
+        pop2 = Population(name="P2", logic=NonTrivialAgentLogic(a=2, b=0.5, offset=-0.4), number_of_agents=20)
         delay = Delay(name="Z", logic=ESDelayLogic())
         fil = Filter(name="F", logic=self.FilterLogic())
         self.system.add_nodes([refsig, agg1, agg2, cont, pop1, pop2, delay, fil])

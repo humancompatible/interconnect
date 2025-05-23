@@ -259,8 +259,7 @@ class ControlSystem:
         """
         self.optimizer = optimizer
 
-    def estimate_probabilities(self):
-        p_num = 2
+    def estimate_probabilities(self, p_num):
         estimated_probs = [[] for _ in range(p_num)]
         for j in range(p_num):
             p_name = "P" + str(j + 1)
