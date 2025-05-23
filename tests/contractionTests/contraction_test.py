@@ -49,8 +49,7 @@ def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots
     return max_g, history, g_history
 
 
-def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node,
-                                 prob_weights, weights=None, it=100, make_plots=None, ax1=None, ax2=None):
+def contraction_single_reference(reference_signal, agent_probs, sim_class, inputs_node, outputs_node, weights=None, it=100, make_plots=None, ax1=None, ax2=None):
     combinations = [1]
     if agent_probs is not None:
         combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
@@ -73,7 +72,6 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
     if make_plots is not None:
         draw_plots(make_plots, reference_signal, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node)
 
-    # r_factor = np.sum(max_grads * np.prod(np.array(list(product(*prob_weights))), axis=1))
     # print(f"{max_grads} {1 / len(combinations)}")
     # r_factor = np.sum(max_grads * (1 / len(combinations)))
     # print(f"r_factor = {r_factor}")
@@ -82,7 +80,7 @@ def contraction_single_reference(reference_signal, agent_probs, sim_class, input
 
 
 def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
-                         prob_weights=None, weights=None, inputs_node="A1", outputs_node="F",
+                         weights=None, inputs_node="A1", outputs_node="F",
                          node_outputs_plot=None,
                          show_distributions_plot=True,
                          show_distributions_histograms_plot=True):
@@ -108,9 +106,6 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
     :rtype: float
     """
 
-    if prob_weights is None:
-        prob_weights = [np.array([0.5, 0.5]), np.array([0.5, 0.5])]
-
     fig, ax = None, [None] * 4
     if node_outputs_plot:
         fig, ax = plt.subplots(nrows=2, ncols=2, figsize=(16, 9))
@@ -125,11 +120,11 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
     for i in range(len(reference_signals)):
         ref_sig = reference_signals[i]
         for j in range(trials):
-            temp_res, temp_mean, temp_history = contraction_single_reference(reference_signal=ref_sig, agent_probs=agent_probs,
-                                                          prob_weights=prob_weights, sim_class=sim_class,
-                                                          inputs_node=inputs_node, outputs_node=outputs_node,
-                                                          weights=weights, it=it, make_plots=node_outputs_plot,
-                                                          ax1=ax[0], ax2=ax[2])
+            temp_res, temp_mean, temp_history = contraction_single_reference(reference_signal=ref_sig,
+                                                                             agent_probs=agent_probs, sim_class=sim_class,
+                                                                             inputs_node=inputs_node, outputs_node=outputs_node,
+                                                                             weights=weights, it=it,
+                                                                             make_plots=node_outputs_plot, ax1=ax[0], ax2=ax[2])
             # maximums[i] = max(maximums[i], temp_res)
             # means[i] = temp_mean
             for k in range(len(temp_history)):
@@ -142,7 +137,7 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
     # print(f"maximums {maximums}")
     maximums = maximums.max(axis=2)
     means = means.mean(axis=2)
-    combinations = ["unchanged"]
+    combinations = ["Unmodified"]
     if agent_probs is not None:
         combinations = list(product(*agent_probs))  # combinations of population probs (a[0,0], a[1,0]); (a[0,0], a[1,1])...
     if node_outputs_plot is not None:
@@ -162,14 +157,17 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
     return means
 
 
-def get_factor_from_space(input_space, agent_probs, sim_class, weights=None, prob_weights=None,
+def get_factor_from_space(input_space, agent_probs, sim_class, weights=None,
                           inputs_node="A1", outputs_node="F", sample_paths=1000, it=5):
-    if prob_weights is None:
-        prob_weights = [np.array([0.5, 0.5]), np.array([0.5, 0.5])]
-    res = torch.tensor([0.0])
+    len_prod = 1
+    if agent_probs is not None:
+        len_prod = len(list(product(*agent_probs)))
+    means = np.zeros((sample_paths, len_prod))
     for i in range(sample_paths):
         ref_sig = input_space.get_random_point()
-        res = np.maximum(res, contraction_single_reference(reference_signal=ref_sig, agent_probs=agent_probs,
-                                                           sim_class=sim_class, prob_weights=prob_weights,
-                                                           inputs_node=inputs_node, outputs_node=outputs_node, it=it))
-    return res
+        _, temp_mean, _ = contraction_single_reference(reference_signal=ref_sig, agent_probs=agent_probs,
+                                                       sim_class=sim_class,
+                                                       inputs_node=inputs_node, outputs_node=outputs_node,
+                                                       weights=weights, it=it)
+        means[i] = temp_mean
+    return means.mean(axis=0)
