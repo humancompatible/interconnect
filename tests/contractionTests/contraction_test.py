@@ -141,7 +141,7 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
             for i in range(len(reference_signals)):
                 labels = [(f"Reference signal={reference_signals[i]}; "
                            f"Population Probabilities = {combinations[j]}") for j in range(len(combinations))]
-                _ = get_distributions(x=end_outputs[i], h=1.9, means=means, labels=labels, step=0.1,
+                _ = get_distributions(x=end_outputs[i], h=1.9, labels=labels, step=0.1,
                                       show_plots=show_distributions_plot,
                                       show_histograms=show_distributions_histograms_plot,
                                       fig=fig, ax=ax[1], node=node_outputs_plot)
