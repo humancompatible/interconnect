@@ -1,10 +1,8 @@
 from graphviz import Digraph
-from IPython.display import display
 import io
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
 import numpy as np
-from copy import deepcopy
 import torch
 
 
@@ -41,6 +39,9 @@ class Plotter:
         if system is None:
             system = self.system
 
+        if isinstance(node, str):
+            node = system.get_node(node)
+
         if node not in system.nodes:
             print(f"Node {node} not found in the system.")
             return
@@ -50,6 +51,7 @@ class Plotter:
         plt.title(f"Output Values For Node {node.name}")
         plt.xlabel("Time Step")
         plt.ylabel("Output Value")
+        plt.grid(True)
         plt.show()
 
     def population_probabilities(self, system=None, xMin=None, xMax=None):

@@ -11,7 +11,10 @@ class ReferenceSignal(Node):
         pass
 
     def set_reference_signal(self, reference_signal):
-        self.ReferenceSignal = torch.tensor([reference_signal], requires_grad=True, dtype=torch.float)
+        if isinstance(reference_signal, torch.Tensor):
+            self.ReferenceSignal = reference_signal
+        else:
+            self.ReferenceSignal = torch.tensor([reference_signal], requires_grad=True, dtype=torch.float)
 
     def _step(self, signal):
         self.outputValue = self.ReferenceSignal

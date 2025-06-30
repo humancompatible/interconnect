@@ -2,6 +2,7 @@ from collections import deque
 import time
 import torch
 import torch.nn as nn
+import numpy as np
 from tqdm import tqdm
 from humancompatible.interconnect.simulators.utils import Utils
 
@@ -258,39 +259,38 @@ class ControlSystem:
         """
         self.optimizer = optimizer
 
-    def run(self, iterations, show_trace=False, show_loss=False, disable_tqdm=False):
-        """
-        Run the control system for a specified number of iterations.
+    def estimate_probabilities(self, p_num):
+        estimated_probs = [[] for _ in range(p_num)]
+        for j in range(p_num):
+            p_name = "P" + str(j + 1)
+            estimated_probs[j] = self.get_node(p_name).logic.n / np.sum(self.get_node(p_name).logic.n)
+        return estimated_probs
 
-        :param iterations: The number of iterations to run the control system for.
-        :type iterations: Integer, required
-
-        :param show_trace: Whether to display the trace of the control system during execution.
-        :type show_trace: Boolean, optional, default=False
-
-        :param show_loss: Whether to display the loss during execution.
-        :type show_loss: Boolean, optional, default=False
-
-        :param disable_tqdm: Whether to disable the tqdm progress bar during execution.
-        :type disable_tqdm: Boolean, optional, default=False
-
-        :return: None
-        """
-        if self.learning_model is not None:
-            self.learning_model.train()
-            torch.autograd.set_detect_anomaly(True)
+    def train(self, destination_file, iterations=10, reruns=5, show_trace=False, show_loss=False):
+        if self.learning_model is None:
+            print("learning model is not set")
+            return
+        self.learning_model.train()
+        torch.autograd.set_detect_anomaly(True)
 
         system_valid = self.check_system()
-        self._resetNodes()
-        for node in self.nodes:
-            self.run_times[node.name] = []
-        if system_valid:
+        if not system_valid:
+            for e in system_valid:
+                raise ValueError(e)
+            return
+
+        for _ in range(reruns):
+            # print("Rerun...")
+            self._resetNodes()
+            for node in self.nodes:
+                self.run_times[node.name] = []
+
             self.iteration_count = 0  # Reset the iteration count before starting
 
             queue = deque([self.startNode])
             visited = set()
 
-            with tqdm(total=iterations, desc="Running Control System", disable=disable_tqdm) as pbar:
+            with tqdm(total=20, desc="Training Control System", disable=True) as pbar:
                 while self.iteration_count < iterations:
                     node = queue.popleft()
                     if node in visited:
@@ -313,17 +313,86 @@ class ControlSystem:
                         print(f"   OUTPUT: {response}")
 
                     if node == self.checkpointNode:
-                        if (self.learning_model is not None) and (self.iteration_count != 0) and (
-                                self.iteration_count != iterations - 1):
-                            cur_loss = self.loss_function(-input_signals[1], input_signals[0])
+                        if (self.iteration_count != 0) and (self.iteration_count != iterations - 1):
+                            cur_loss = self.loss_function(-input_signals[1], input_signals[0].unsqueeze(0))
                             self.optimizer.zero_grad()
-                            cur_loss.backward(retain_graph=True)
+                            cur_loss.backward(retain_graph=False)
+                            torch.nn.utils.clip_grad_norm_(self.learning_model.parameters(), 1.0)
                             self.optimizer.step()
 
                         self.iteration_count += 1
 
-                        if show_loss and (self.learning_model is not None) and (self.iteration_count != 1):
+                        if show_loss and (self.iteration_count != 1):
                             print(f"Loss: {cur_loss}")
+
+                        if show_trace:
+                            print(f"Checkpoint: Iteration {self.iteration_count - 1}")
+                        visited.clear()  # Clear the visited set for the next iteration
+                        pbar.update(1)  # Update the progress bar
+
+                    for output_node in node.outputs:
+                        if output_node not in visited:
+                            queue.append(output_node)
+
+        self.learning_model.eval()
+        torch.save(self.learning_model.state_dict(), destination_file)
+
+
+    def run(self, iterations, show_trace=False, show_loss=False, disable_tqdm=False):
+        """
+        Run the control system for a specified number of iterations.
+
+        :param iterations: The number of iterations to run the control system for.
+        :type iterations: Integer, required
+
+        :param show_trace: Whether to display the trace of the control system during execution.
+        :type show_trace: Boolean, optional, default=False
+
+        :param show_loss: Whether to display the loss during execution.
+        :type show_loss: Boolean, optional, default=False
+
+        :param disable_tqdm: Whether to disable the tqdm progress bar during execution.
+        :type disable_tqdm: Boolean, optional, default=False
+
+        :return: None
+        """
+        if self.learning_model is not None:
+            self.learning_model.eval()
+
+        system_valid = self.check_system()
+        self._resetNodes()
+        for node in self.nodes:
+            self.run_times[node.name] = []
+        if system_valid:
+            self.iteration_count = 0  # Reset the iteration count before starting
+
+            queue = deque([self.startNode])
+            visited = set()
+
+            with tqdm(total=iterations, desc="Running Control System", disable=disable_tqdm) as pbar:
+                while self.iteration_count <= iterations:
+                    node = queue.popleft()
+                    if node in visited:
+                        continue
+                    visited.add(node)
+
+                    if show_trace:
+                        print(f"NODE: {node.name}\n   INPUT: {[input_node.outputValue for input_node in node.inputs]}")
+
+                    input_signals = [input_node.outputValue for input_node in node.inputs]
+                    # Flatten the list of lists
+                    input_signals = [signal for signal in input_signals if type(signal) is torch.Tensor]
+
+                    start_time = time.time()
+                    response = node._step(input_signals)
+                    end_time = time.time()
+                    self.run_times[node.name].append(end_time - start_time)
+
+                    if show_trace:
+                        print(f"   OUTPUT: {response}")
+
+                    if node == self.checkpointNode:
+                        self.iteration_count += 1
 
                         if show_trace:
                             print(f"Checkpoint: Iteration {self.iteration_count - 1}")
@@ -346,19 +415,3 @@ class ControlSystem:
         for node in self.nodes:
             node.outputValue = []
             node.history = []
-
-    def compute_lipschitz_constant(self):
-        """
-        Compute the Lipschitz constant in the control system.
-
-        :return: Lipschitz constant
-        """
-        lipschitz_const = 1.0
-        for node in self.nodes:
-            logic = node.logic
-            if logic is not None:
-                expr = logic.expression
-                expr = expr.subs(logic.constants)
-                lipschitz_const *= Utils.compute_lipschitz_constant_from_expression(expr)
-
-        return lipschitz_const
