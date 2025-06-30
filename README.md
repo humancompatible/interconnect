@@ -1,13 +1,13 @@
 # interconnect
 
-Humancompatible/Interconnect is an open-source toolkit for the modelling, simulations, and theorem proving for interconnections of ensembles.
+Humancompatible/Interconnect is an open-source toolkit for the modelling, simulations, and theorem proving within ergodicity of multi-agent systems.
 
 ## Functionality
 
 ---
-Currently, toolkit allows to approximate the Contraction factor of the system with Stochastic approximation,
-to check if Unique Invariant Measure exists, which is a prerequisite for Fairness. Then, it's possible
-to estimate this unique invariant measure.
+Notably, the toolkit makes it possible to test contraction-on-average (sufficient and sometimes necessary) conditions for unique ergodicity via 
+stochastic approximation, i.e., to check if unique invariant measure exists. This is a prerequisite for most definitions of fairness in repeated
+uses of AI systems. The toolkit also makes it possible to estimate this unique invariant measure, if it does exist.
 
 <div align="center">
     <img src="images/c_factor.png" alt="Contraction Factor approximation" width="550"/>
@@ -20,7 +20,7 @@ to estimate this unique invariant measure.
 ## Using HumanCompatible.Interconnect
 
 ---
-1. Approximation of the Contraction factor of the iterated system:
+1. Approximation of the modulus of local Lipschitz continuity on average for an iterated function system:
 
 ```python
 from tests.contractionTests.contraction_test import get_factor_from_list
@@ -36,7 +36,7 @@ C = get_factor_from_list(reference_signals=reference_signals,
                          show_distributions_histograms_plot=False)
 ```
 
-2. Approximating Unique Invariant Measure of the system:
+2. Approximating the unique invariant measure of the system:
 
 ```python
 from humancompatible.interconnect.simulators.distribution import *
@@ -61,13 +61,13 @@ distributions = get_distributions(x=outputs,
 ```
 
 ### Examples
+
 ``examples/basic_simulation_ReLU`` - example notebook featuring the calls above.
 Other example notebooks can be found in the same folder.
 
 ## Related work
 
----
-For a background on the direction of research, see the AAMAS tutorial (https://humancompatible.org/index.php/2024/05/05/fairness-in-the-sharing-economy-and-stochastic-models-for-mas/), or the original papers:
+For more background, see our AAMAS tutorial (https://humancompatible.org/index.php/2024/05/05/fairness-in-the-sharing-economy-and-stochastic-models-for-mas/), or the original papers:
 
 arXiv:1807.03256 (https://arxiv.org/abs/1807.03256)
 On the Ergodic Control of Ensembles
