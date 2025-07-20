@@ -1,6 +1,6 @@
 # interconnect
 
-Humancompatible/Interconnect is an open-source toolkit for the modelling, simulations, and theorem proving within ergodicity of multi-agent systems.
+humancompatible.interconnect is an open-source toolkit for the modelling, simulations, and theorem proving within ergodicity of multi-agent systems.
 
 ## Functionality
 
