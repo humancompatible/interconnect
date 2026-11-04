@@ -44,7 +44,7 @@ MODEL = "Qwen/Qwen2.5-1.5B-Instruct"   # programmer and analyst share these weig
 tok = AutoTokenizer.from_pretrained(MODEL)
 tok.padding_side = "left"   # all prompts end at the same position, so generated tokens line up
 DEV = "cuda" if torch.cuda.is_available() else "cpu"   # LLM on DEV; the package side stays on CPU
-model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).to(DEV).eval()
+model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.float32).to(DEV).eval()
 for p in model.parameters():
     p.requires_grad_(False)
 E = model.get_input_embeddings().weight
