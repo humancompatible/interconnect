@@ -6,7 +6,7 @@
 # sampling (one-hot `y`). The judge never sees the instruction, only the response.
 # 
 # Sentiment readout: `s = logit[positive] − logit[negative]` of a linear head (trained on Amazon
-# review titles, `finetune_gpt2_sentiment_head.py`) applied to the mean hidden state over the response.
+# review texts, `finetune_sentiment_head.py`) applied to the mean hidden state over the response.
 
 import torch
 import torch.nn.functional as F
@@ -15,13 +15,13 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from common import MODEL, BASE, INSTRUCTIONS, FEAT_DIR
 
-HEAD = FEAT_DIR / "score_head.pt"  # from finetune_gpt2_sentiment_head.py
+HEAD = FEAT_DIR / "score_head.pt"  # from finetune_sentiment_head.py
 device = "cpu"  # the local GPU has 1 GB, too small for the fp32 model
 tok = AutoTokenizer.from_pretrained(MODEL)
 model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).to(device).eval()
 for p in model.parameters():
     p.requires_grad_(False)
-# judge = the same model's body + a linear head trained on its last-token states
+# judge = the same model's body + a linear head trained on its mean hidden states
 score = torch.nn.Linear(model.config.hidden_size, 2, bias=False).to(device)
 score.load_state_dict(torch.load(HEAD))
 score.requires_grad_(False)

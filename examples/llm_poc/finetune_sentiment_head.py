@@ -4,7 +4,7 @@ from sklearn.metrics import accuracy_score, precision_recall_fscore_support
 from torch.utils.data import TensorDataset, DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-from common import MODEL, BASE, INSTRUCTIONS, FEAT_DIR
+from common import MODEL, BASE, INSTRUCTIONS, FEAT_DIR, STOP_TOKENS
 
 # ## 1. Train a linear head on cached mean hidden states
 
@@ -51,7 +51,7 @@ for epoch in range(1000):
 
         if epoch % 10 == 0:
             print(
-                compute_metrics((val_logits.detach().numpy(), scorer_val_labels.detach().numpy())), val_loss.detach().numpy()
+                compute_metrics((val_logits.numpy(), scorer_val_labels.numpy())), val_loss.item()
             )
 
     for b_features, b_labels in dl:
@@ -67,13 +67,13 @@ torch.save(best_score_state, FEAT_DIR / "score_head.pt")
 print(f"best val loss {best_val_loss:.4f}")
 
 # ## 2. Score hard-token generations as in the loop
-# one-hot tokens -> Y @ E -> head reads the mean state over the response
+# token embeddings E[ids] (= one-hot Y @ E) -> head reads the mean state over the response
 
 device = "cpu"
 tok = AutoTokenizer.from_pretrained(MODEL)
 model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).to(device).eval()
 E = model.get_input_embeddings().weight
-STOP = [tok.convert_tokens_to_ids("<|im_end|>"), tok.eos_token_id]
+STOP = torch.tensor(tok.convert_tokens_to_ids(STOP_TOKENS))
 
 with torch.inference_mode():
     for ins in INSTRUCTIONS:
@@ -83,15 +83,15 @@ with torch.inference_mode():
              return_tensors="pt"
             )["input_ids"].to(device)
         s_all = []
-        for seed in range(20):
+        for seed in range(5):
             torch.manual_seed(seed)
             # plain T=1 sampling, as in the loop (override Qwen's generation_config defaults)
             ids = model.generate(prompt_ids, do_sample=True, temperature=1.0, top_k=0, top_p=1.0,
                                  repetition_penalty=1.0, max_new_tokens=32,
                                  pad_token_id=tok.eos_token_id)[0, prompt_ids.shape[1]:]
-            ids = ids[~torch.isin(ids, torch.tensor(STOP))]
-            Y = torch.nn.functional.one_hot(ids, E.shape[0]).float()
-            h = model.model(inputs_embeds=(Y @ E)[None]).last_hidden_state[0].mean(0)
+            ids = ids[~torch.isin(ids, STOP)]
+            # E[ids] == one_hot(ids) @ E
+            h = model.model(inputs_embeds=E[ids][None]).last_hidden_state[0].mean(0)
             logits = score(h)
             s = logits[1] - logits[0]  # log-odds of positive
             s_all.append(s.item())

@@ -49,9 +49,8 @@ else:
 tokenized_dataset["test"] = tokenized_dataset["test"].map(tokenize_cut, with_indices=True)
 
 print("saving to file...")
-tokenized_dataset['train'].save_to_disk(DATA / "amazon_polarity_content_mean" / "train")
-tokenized_dataset['validation'].save_to_disk(DATA / "amazon_polarity_content_mean" / "validation")
-tokenized_dataset['test'].save_to_disk(DATA / "amazon_polarity_content_mean" / "test")
+for name, ds in tokenized_dataset.items():
+    ds.save_to_disk(DATA / "amazon_polarity_content_mean" / name)
 
 print(f"dataset split and tokenized:\n {tokenized_dataset}")
 
@@ -66,15 +65,17 @@ print(device)
 model.to(device)
 
 cols = ["input_ids", "attention_mask", "label"]  # collator renames label -> labels
-train_dl = DataLoader(tokenized_dataset["train"].select_columns(cols), batch_size=BATCH_SIZE, collate_fn=data_collator)
-val_dl = DataLoader(tokenized_dataset["validation"].select_columns(cols), batch_size=BATCH_SIZE, collate_fn=data_collator)
-test_dl = DataLoader(tokenized_dataset["test"].select_columns(cols), batch_size=BATCH_SIZE, collate_fn=data_collator)
-
-loaders = {
-    "train": train_dl,
-    "val": val_dl,
-    "test": test_dl
+splits = {
+    "train": tokenized_dataset["train"],
+    "val": tokenized_dataset["validation"],
+    "test": tokenized_dataset["test"],
 }
+
+def length_sorted_loader(ds):
+    # sorting by length minimizes padding; returns the order to undo it afterwards
+    order = np.argsort([len(x) for x in ds["input_ids"]], kind="stable")
+    dl = DataLoader(ds.select(order).select_columns(cols), batch_size=BATCH_SIZE, collate_fn=data_collator)
+    return dl, torch.from_numpy(order)
 
 def extract_llm_features(dataloader):
     per_sentence_transformer_feats = []
@@ -94,12 +95,18 @@ def extract_llm_features(dataloader):
 FEAT_DIR.mkdir(parents=True, exist_ok=True)
 print(f"Path ready: will be saved as {FEAT_DIR}/*.pt")
 
-for subset, loader in loaders.items():
+for subset, ds in splits.items():
     print(f"Starting extraction: {subset}")
+    loader, order = length_sorted_loader(ds)
     scorer_feats, scorer_labels = extract_llm_features(loader)
     print(f"{subset} finished, stacking")
-    scorer_feats = torch.vstack(scorer_feats)
-    scorer_labels = torch.concat(scorer_labels)
+    # row i of the sorted output belongs to original row order[i]
+    feats_sorted = torch.vstack(scorer_feats)
+    labels_sorted = torch.concat(scorer_labels)
+    scorer_feats = torch.empty_like(feats_sorted)
+    scorer_labels = torch.empty_like(labels_sorted)
+    scorer_feats[order] = feats_sorted
+    scorer_labels[order] = labels_sorted
     print(f"saving {subset}")
     torch.save(scorer_feats, FEAT_DIR / f"feat_{subset}.pt")
     torch.save(scorer_labels, FEAT_DIR / f"labels_{subset}.pt")
