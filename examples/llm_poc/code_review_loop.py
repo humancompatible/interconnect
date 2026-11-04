@@ -40,6 +40,7 @@ from humancompatible.interconnect.simulators.logic.delays.exponentialSmoothingDe
 from humancompatible.interconnect.simulators.logic.controllers.pi_controller import PiControllerLogic
 from tests.contractionTests.contraction_test import get_factor_from_list
 
+print(f"torch {torch.__version__}, transformers {AutoModelForCausalLM.__version__}, interconnect {Simulation.__version__}")
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"   # programmer and analyst share these weights
 tok = AutoTokenizer.from_pretrained(MODEL)
 tok.padding_side = "left"   # all prompts end at the same position, so generated tokens line up
