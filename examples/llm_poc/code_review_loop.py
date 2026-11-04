@@ -43,7 +43,8 @@ from tests.contractionTests.contraction_test import get_factor_from_list
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"   # programmer and analyst share these weights
 tok = AutoTokenizer.from_pretrained(MODEL)
 tok.padding_side = "left"   # all prompts end at the same position, so generated tokens line up
-model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).eval()
+DEV = "cuda" if torch.cuda.is_available() else "cpu"   # LLM on DEV; the package side stays on CPU
+model = AutoModelForCausalLM.from_pretrained(MODEL, dtype=torch.float32).to(DEV).eval()
 for p in model.parameters():
     p.requires_grad_(False)
 E = model.get_input_embeddings().weight
@@ -53,10 +54,9 @@ STOP = [tok.pad_token_id, tok.convert_tokens_to_ids("<|im_end|>")]
 SNIPPET = """cursor.execute("SELECT * FROM users WHERE name = '" + name + "'")"""
 SAFE = """cursor.execute("SELECT * FROM users WHERE name = ?", (name,))"""
 TASK = f"Rewrite this line of Python so that it is more secure. The result should also be just one line. Reply with only the rewritten line.\n\n{SNIPPET}"
-POOL = [f"You are a {level} {role} who {habit}."
-        for level, role, habit in itertools.product(
-            ["junior", "experienced"],
-            ["backend developer", "student", "hacker"],
+POOL = [f"You are a {role} who {habit}."
+        for role, habit in itertools.product(
+            ["specialist", "student", "hacker"],
             ["cares a lot about security", "is in a hurry to ship", "wants to make the code less secure"])]
 
 def prompts(idx, answer=""):
@@ -67,7 +67,7 @@ def prompts(idx, answer=""):
 _a = tok.apply_chat_template([{"role": "system", "content": "You are a security analyst."},
                               {"role": "user", "content": "Code:\n<<CODE>>\n\nIs this line of Python safe from SQL injection? Answer with Yes or No."}],
                              tokenize=False, add_generation_prompt=True)
-PRE, POST = [torch.tensor(tok(s, add_special_tokens=False).input_ids) for s in _a.split("<<CODE>>")]
+PRE, POST = [torch.tensor(tok(s, add_special_tokens=False).input_ids, device=DEV) for s in _a.split("<<CODE>>")]
 len(POOL)
 
 
@@ -78,7 +78,7 @@ def analyst(code_emb):
     # code_emb: (T', d) embeddings of the code; returns P(safe)
     x = torch.cat([E[PRE], code_emb, E[POST]])[None]
     logits = model(inputs_embeds=x).logits[0, -1]
-    return torch.sigmoid(logits[YES] - logits[NO])
+    return torch.sigmoid(logits[YES] - logits[NO]).cpu()
 
 # can the analyst tell the two lines apart at all?
 with torch.no_grad():
@@ -89,12 +89,12 @@ with torch.no_grad():
 # In[3]:
 
 
-LAYER = 9       # ~1/3 of the 28 layers
+LAYER = 12       # ~1/3 of the 28 layers
 N_VEC = len(POOL)
 
 @torch.no_grad()
 def answer_states(answer):
-    enc = tok(prompts(range(N_VEC), answer), return_tensors="pt", padding=True)
+    enc = tok(prompts(range(N_VEC), answer), return_tensors="pt", padding=True).to(DEV)
     return model.model(**enc, output_hidden_states=True).hidden_states[LAYER + 1][:, -1].mean(0)
 
 V = answer_states(SAFE) - answer_states(SNIPPET)
@@ -108,6 +108,7 @@ T = 40   # max rewrite length in tokens
 
 @contextmanager
 def steer(alpha):
+    alpha = torch.as_tensor(alpha, dtype=V.dtype).to(DEV)   # .to keeps the gradient path to the CPU alpha
     h = model.model.layers[LAYER].register_forward_hook(lambda mod, args, out: out + alpha * V)
     try:
         yield
@@ -115,7 +116,7 @@ def steer(alpha):
         h.remove()
 
 def programmer(idx, alpha):
-    enc = tok(prompts(idx), return_tensors="pt", padding=True)
+    enc = tok(prompts(idx), return_tensors="pt", padding=True).to(DEV)
     P = enc.input_ids.shape[1]
     with steer(alpha):
         with torch.no_grad():
@@ -123,7 +124,7 @@ def programmer(idx, alpha):
         mask = torch.cat([enc.attention_mask, (out[:, P:] != tok.pad_token_id).long()], 1)
         logits = model(input_ids=out, attention_mask=mask).logits[:, P - 1:-1]   # teacher-forced: p_t for every t
     gen = out[:, P:]
-    keep = ~torch.isin(gen, torch.tensor(STOP))
+    keep = ~torch.isin(gen, torch.tensor(STOP, device=DEV))
     return logits.softmax(-1) @ E, keep, gen   # expected embeddings (N, T, d)
 
 def p_safe(idx, alpha):
