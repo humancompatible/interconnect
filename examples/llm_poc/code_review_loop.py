@@ -44,8 +44,8 @@ print("hi")
 MODEL = "Qwen/Qwen2.5-1.5B-Instruct"   # programmer and analyst share these weights
 tok = AutoTokenizer.from_pretrained(MODEL)
 tok.padding_side = "left"   # all prompts end at the same position, so generated tokens line up
-DEV = "cuda" if torch.cuda.is_available() else "cpu"   # LLM on DEV; the package side stays on CPU
-model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.float32).to(DEV).eval()
+DEV = "cuda" if torch.cuda.is_available() else "cpu"
+model = AutoModelForCausalLM.from_pretrained(MODEL, torch_dtype=torch.float16).to(DEV).eval()
 for p in model.parameters():
     p.requires_grad_(False)
 E = model.get_input_embeddings().weight
@@ -66,7 +66,7 @@ def prompts(idx, answer=""):
 
 # analyst prompt with a slot for the code; the code is spliced in as embeddings
 _a = tok.apply_chat_template([{"role": "system", "content": "You are a security analyst."},
-                              {"role": "user", "content": "Code:\n<<CODE>>\n\nIs this line of Python safe from SQL injection? Answer with Yes or No."}],
+                              {"role": "user", "content": f"Original line:\n{SNIPPET}\n\nRewritten line:\n<<CODE>>\n\nIs the rewritten line safer than the original? Answer with Yes or No."}],
                              tokenize=False, add_generation_prompt=True)
 PRE, POST = [torch.tensor(tok(s, add_special_tokens=False).input_ids, device=DEV) for s in _a.split("<<CODE>>")]
 len(POOL)
