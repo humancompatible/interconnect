@@ -233,7 +233,7 @@ for a0, color in zip([-1.0, 0.0, 1.0], ["C0", "C1", "C2"]):
 ax[0].set_ylabel("alpha"); ax[1].set_ylabel("y"); ax[1].axhline(R, color="k", ls=":")
 ax[0].legend(); ax[0].set_xlabel("step"); ax[1].set_xlabel("step");
 
-
+plt.savefig("code_review_loop.pdf", bbox_inches="tight", dpi=300)
 # Contraction factor from the package: mean over steps and trials of $|\partial F_k / \partial e_k| = \kappa\,|\partial y_k/\partial\alpha|$ at the visited $\alpha_k$ and drawn personas. For the integrator state map $\alpha_{k+1} = \alpha_k + \kappa(r - y(\alpha_k))$ the relevant quantity is $|1 - \kappa\,\partial y/\partial\alpha|$.
 
 # In[ ]:
@@ -241,5 +241,5 @@ ax[0].legend(); ax[0].set_xlabel("step"); ax[1].set_xlabel("step");
 
 C = get_factor_from_list(reference_signals=np.array([R]), agent_probs=None, sim_class=CodeSim,
                          it=STEPS, trials=3, inputs_node="A1", outputs_node="F")
-C
+print(C)
 
