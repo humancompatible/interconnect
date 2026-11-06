@@ -2,15 +2,16 @@
 
 A_r^L = {mu : L(mu) <= r} is the region of the paper (one linear constraint).
 A_r^C = {mu : C(mu) <= r} = {mu : D mu <= r} uses the contraction-on-average constant
-instead; it is a convex polytope with one constraint per grid state and contains A_r^L.
+instead; it is a convex polytope with one constraint per state in D and contains A_r^L.
 
-Both start from the derivative matrix D[j, i] = |w_i'(x_j)| on a grid of states:
+Both start from the slope table D[j, i] = |w_i'(x_j)| at a finite set of states x_j, for
+example the states visited by runs of the graph:
 
     L(mu) = sum_i mu_i * max_j D[j, i]     per-mode worst case, then average
     C(mu) = max_j sum_i mu_i * D[j, i]     average at each state, then worst state
 
 For a one-dimensional state and C^1 maps, C(mu) is eq. (12) of the Interconnect paper and
-C(mu) <= L(mu).  Both are maxima over a finite grid, so they are estimates from below.
+C(mu) <= L(mu).  Both are maxima over the states in D, so they are estimates from below.
 """
 
 import numpy as np
@@ -20,7 +21,7 @@ from ims_core import proj_simplex
 
 
 def lipschitz_constants(D):
-    """ell_i = max_j D[j, i], the Lipschitz constant of each mode on the grid."""
+    """ell_i = max_j D[j, i], the Lipschitz constant of each mode over the states in D."""
     return D.max(axis=0)
 
 
