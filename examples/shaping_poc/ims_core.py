@@ -6,6 +6,8 @@ P(mu) = sum_i mu_i W_i (Section "The discretized model").  On a uniform 1-D
 grid, W_1 distances, optimal Kantorovich potentials, solutions of the Poisson
 equation and the sensitivity vectors s_mu(f) of Section "Sensitivity" are all
 explicit, which is what this module implements.
+
+See: https://arxiv.org/abs/2610.34172
 """
 import numpy as np
 import scipy.sparse as sp

@@ -19,7 +19,7 @@ from humancompatible.interconnect.simulators.nodes.filter import Filter
 from humancompatible.interconnect.simulators.nodes.population import Population
 from humancompatible.interconnect.simulators.nodes.reference import ReferenceSignal
 from humancompatible.interconnect.simulators.simulation import Simulation
-from tests.contractionTests.contraction_test import get_jacobian_norm
+from humancompatible.interconnect.guarantees.contraction import mode_maps, mode_slopes, one_pass
 
 from ims_core import GridChain
 
@@ -130,28 +130,15 @@ class OpaqueSim(Simulation):
         """w_mode(y): the agent's next answer after one run() pass from the state y, with the mode forced.
 
         y may be a 1-D batch of states; autograd connections to y are kept."""
-        logic = self.agent.logic
-        forced, logic.forced_mode = logic.forced_mode, mode
-        try:
-            self.system.run(1, disable_tqdm=True, initial_outputs={"P1": y})
-        finally:
-            logic.forced_mode = forced
-        return self.agent.history[0]
+        return one_pass(self.system, "P1", y, mode)
 
     def maps(self, x):
         """Array (m, N) of w_i(x_j), one batched run() pass per mode."""
-        xt = torch.as_tensor(np.asarray(x, dtype=float))
-        with torch.no_grad():
-            return np.stack([self.step(xt, i).numpy() for i in range(self.m)])
+        return mode_maps(self.system, "P1", x, self.m)
 
     def slopes(self, states):
         """Array (N, m) of D[j, i] = |w_i'(y_j)|: get_jacobian_norm of one run() pass, per state and mode."""
-        D = np.empty((len(states), self.m))
-        for j, yj in enumerate(np.asarray(states, dtype=float)):
-            y = torch.tensor([yj], dtype=torch.float64, requires_grad=True)
-            for i in range(self.m):
-                D[j, i] = float(get_jacobian_norm(y, self.step(y, i)))
-        return D
+        return mode_slopes(self.system, "P1", states, self.m)
 
     def simulate(self, mu, iterations, x0=0.0, seed=None):
         """Run the graph under the law mu from y_0 = x0.
