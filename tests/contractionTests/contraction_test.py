@@ -4,6 +4,7 @@ import numpy as np
 from itertools import product
 
 from humancompatible.interconnect.simulators.distribution import *
+from humancompatible.interconnect.guarantees.contraction import get_jacobian_norm
 
 
 def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, inputs_node, outputs_node):
@@ -25,14 +26,6 @@ def draw_plots(make_plots, ref_sig, combinations, history, g_history, ax1, ax2, 
     ax2.set_ylabel("Gradient Value")
     ax2.grid(True)
     return
-
-
-def get_jacobian_norm(inp, out):
-    grad_vectors = []
-    for i in range(out.shape[0]):
-        grad_vectors.append(torch.autograd.grad(out[i], inp, retain_graph=True)[0])
-    J = torch.stack(grad_vectors, dim=0)
-    return J.norm(p=1).detach()
 
 
 def contraction_for_simulation(simulation, inputs_node, outputs_node, make_plots, it=100):
