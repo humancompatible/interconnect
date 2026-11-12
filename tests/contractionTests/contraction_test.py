@@ -122,7 +122,7 @@ def get_factor_from_list(reference_signals, agent_probs, sim_class, it, trials,
             # means[i] = temp_mean
             for k in range(len(temp_history)):
                 maximums[i][k] = np.maximum(maximums[i][k], temp_res[k])
-                means[i][k] = temp_mean[k]
+                means[i][k][j] = temp_mean[k]
             if node_outputs_plot is not None:
                 for k in range(len(temp_history)):
                     end_outputs[i][k][j] = temp_history[k][-1]
