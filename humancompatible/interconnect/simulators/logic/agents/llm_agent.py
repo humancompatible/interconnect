@@ -35,12 +35,12 @@ import torch
 # invariant measure) possible at all.
 NEUTRALITY_LADDER = [
     "Be extremely enthusiastic and positive. Embody a real enthusiast of the topic.",
-    "Be mildly positive.", # switched places cause of the mean scores
-    "Be causually positive.",
+    "Be mildly positive, but impersonal and factual.", # switched places cause of the mean scores
+    "Be casually positive, but impersonal and factual.",
     "Be strictly neutral, impersonal and factual. Use no evaluative or emotional language.",
-    "Be mildly critical and disapproving.",
-    "Be critical and disapproving. Embody someone who dislikes the topic.",
-    "Be extremely critical and negative. Embody a real hater of the topic.",
+    "Be mildly critical and disapproving, but impersonal and factual.",
+    "Be very critical and disapproving, but impersonal and factual.",
+    "Be extremely critical and negative, but impersonal and factual.",
 ]
 
 NUM_LEVELS = len(NEUTRALITY_LADDER)
