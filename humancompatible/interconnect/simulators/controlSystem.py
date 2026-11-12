@@ -338,7 +338,7 @@ class ControlSystem:
         torch.save(self.learning_model.state_dict(), destination_file)
 
 
-    def run(self, iterations, show_trace=False, show_loss=False, disable_tqdm=False):
+    def run(self, iterations, show_trace=False, show_loss=False, disable_tqdm=False, initial_outputs=None):
         """
         Run the control system for a specified number of iterations.
 
@@ -354,6 +354,13 @@ class ControlSystem:
         :param disable_tqdm: Whether to disable the tqdm progress bar during execution.
         :type disable_tqdm: Boolean, optional, default=False
 
+        :param initial_outputs: Output values that nodes hold before the first iteration, keyed by node
+            or node name. Nodes that read a loop's feedback in the first iteration see these values
+            instead of nothing, so a run can start from a chosen state. They are not added to the
+            nodes' history. Autograd connections are kept, so the outputs of the run can be
+            differentiated with respect to them.
+        :type initial_outputs: dict, optional, default=None
+
         :return: None
         """
         if self.learning_model is not None:
@@ -361,6 +368,11 @@ class ControlSystem:
 
         system_valid = self.check_system()
         self._resetNodes()
+        for node, value in (initial_outputs or {}).items():
+            node = self.get_node(node) if isinstance(node, str) else node
+            if node not in self.nodes:
+                raise ValueError(f"initial_outputs: node {node.name} is not part of this control system.")
+            node.outputValue = value
         for node in self.nodes:
             self.run_times[node.name] = []
         if system_valid:
