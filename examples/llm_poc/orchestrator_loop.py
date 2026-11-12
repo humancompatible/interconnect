@@ -26,6 +26,8 @@ parser.add_argument("--y0_near_sup", action=argparse.BooleanOptionalAction, defa
                     help="start the runs around the y0 where the local factor peaked")
 args = parser.parse_args()
 
+print(f"amplify: {args.amplify}")
+
 MODEL = "Qwen/Qwen2.5-Coder-7B-Instruct"   # programmer, analyst and orchestrator share these weights; fp32 ~30 GB
 tok = AutoTokenizer.from_pretrained(MODEL)
 tok.padding_side = "left"   # all prompts end at the same position, so generated tokens line up
